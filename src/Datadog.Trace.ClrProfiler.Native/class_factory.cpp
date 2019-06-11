@@ -9,7 +9,7 @@
 
 ClassFactory::ClassFactory() : refCount(0) {}
 
-ClassFactory::~ClassFactory() {}
+ClassFactory::~ClassFactory() = default;
 
 HRESULT STDMETHODCALLTYPE ClassFactory::QueryInterface(REFIID riid,
                                                        void** ppvObject) {
@@ -28,7 +28,8 @@ ULONG STDMETHODCALLTYPE ClassFactory::AddRef() {
 }
 
 ULONG STDMETHODCALLTYPE ClassFactory::Release() {
-  int count = std::atomic_fetch_sub(&this->refCount, 1) - 1;
+  const int count = std::atomic_fetch_sub(&this->refCount, 1) - 1;
+
   if (count <= 0) {
     delete this;
   }
@@ -46,10 +47,9 @@ HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter,
   }
 
   trace::Info("Datadog CLR Profiler ", PROFILER_VERSION);
-  trace::Debug("ClassFactory::CreateInstance");
 
-  auto profiler = new trace::CorProfiler();
-  return profiler->QueryInterface(riid, ppvObject);
+  profiler_ = std::make_unique<trace::CorProfiler>();
+  return profiler_->QueryInterface(riid, ppvObject);
 }
 
 HRESULT STDMETHODCALLTYPE ClassFactory::LockServer(BOOL fLock) { return S_OK; }

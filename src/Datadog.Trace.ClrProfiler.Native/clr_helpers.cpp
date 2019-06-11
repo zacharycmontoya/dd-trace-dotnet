@@ -138,6 +138,7 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
       Warn("[trace::GetFunctionInfo] unknown token type: {}", token_type);
       return {};
   }
+
   if (FAILED(hr) || function_name_len == 0) {
     return {};
   }

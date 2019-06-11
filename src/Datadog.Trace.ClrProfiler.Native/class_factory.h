@@ -7,10 +7,12 @@
 
 #include <atomic>
 #include "unknwn.h"
+#include "cor_profiler.h"
 
 class ClassFactory : public IClassFactory {
  private:
   std::atomic<int> refCount;
+  std::unique_ptr<trace::CorProfiler> profiler_;
 
  public:
   ClassFactory();
