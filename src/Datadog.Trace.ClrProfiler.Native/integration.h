@@ -159,10 +159,21 @@ struct MethodSignature {
     return 0;
   }
 
+  int ReturnType() const {
+    if (data.size() > 3 && IsCallingConvention(IMAGE_CEE_CS_CALLCONV_GENERIC)) {
+      return data[3];
+    }
+    if (data.size() > 2) {
+      return data[2];
+    }
+    return 0;
+  }
+
   WSTRING str() const {
     WSTRINGSTREAM ss;
     for (auto& b : data) {
-      ss << std::hex << std::setfill('0'_W) << std::setw(2) << static_cast<int>(b);
+      ss << std::hex << std::setfill('0'_W) << std::setw(2)
+         << static_cast<int>(b);
     }
     return ss.str();
   }

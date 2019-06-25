@@ -582,6 +582,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       // replace with a call to the instrumentation wrapper
       pInstr->m_Arg32 = wrapper_method_ref;
 
+      auto return_type = target.signature.ReturnType();
+
+      if (return_type == ELEMENT_TYPE_VOID) {
+        // if return value was not expected, pop it off the stack
+        rewriter_wrapper.Pop();
+      }
+
       modified = true;
 
       Info("*** JITCompilationStarted() replaced calls from ", caller.type.name,
