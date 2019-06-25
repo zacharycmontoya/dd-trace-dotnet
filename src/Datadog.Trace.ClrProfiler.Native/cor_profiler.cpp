@@ -451,19 +451,24 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         continue;
       }
 
-      auto expected_number_args = method_replacement.wrapper_method
-                                      .method_signature.NumberOfArguments();
+      if (!isCallConv(method_replacement.wrapper_method.method_signature
+                          .CallingConvention(),
+                      IMAGE_CEE_CS_CALLCONV_VARARG)) {
+        // custom integrations uses VARARG so argument count or types don't need
+        // to match
+        auto expected_number_args = method_replacement.wrapper_method
+                                        .method_signature.NumberOfArguments();
 
-      // We pass the opcode and mdToken as the last arguments to every wrapper
-      // method
-      expected_number_args = expected_number_args - 2;
+        // We pass the opcode and mdToken as the last arguments to every wrapper
+        // method
+        expected_number_args = expected_number_args - 2;
 
-      if (target.signature.IsInstanceMethod()) {
-        // We always pass the instance as the first argument
-        expected_number_args--;
-      }
+        if (target.signature.IsInstanceMethod()) {
+          // We always pass the instance as the first argument
+          expected_number_args--;
+        }
 
-      auto target_arg_count = target.signature.NumberOfArguments();
+        auto target_arg_count = target.signature.NumberOfArguments();
 
       if (expected_number_args != target_arg_count) {
         // Number of arguments does not match our wrapper method
@@ -477,8 +482,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
               " target_arg_count=", target_arg_count);
         }
 
-        continue;
-      }
+          continue;
+        }
 
       auto method_def_md_token = target.id;
 
@@ -531,8 +536,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
               " expected_sig_types.size()=", expected_sig_types.size());
         }
 
-        continue;
-      }
+          continue;
+        }
 
       auto is_match = true;
       for (size_t i = 0; i < expected_sig_types.size(); i++) {
@@ -552,14 +557,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
                 " sig_types[", i, "]=", sig_types[i]);
           }
 
-          is_match = false;
-          break;
+            is_match = false;
+            break;
+          }
         }
-      }
 
-      if (!is_match) {
-        // signatures don't match
-        continue;
+        if (!is_match) {
+          // signatures don't match
+          continue;
+        }
       }
 
       const auto original_argument = pInstr->m_Arg32;
