@@ -418,7 +418,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         continue;
       }
 
-      // get the target function info, continue if its invalid
+      // get the target function info, skip if it's invalid
       auto target =
           GetFunctionInfo(module_metadata->metadata_import, pInstr->m_Arg32);
       if (!target.IsValid()) {
