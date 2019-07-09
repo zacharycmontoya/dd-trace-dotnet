@@ -470,92 +470,94 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
         auto target_arg_count = target.signature.NumberOfArguments();
 
-      if (expected_number_args != target_arg_count) {
-        // Number of arguments does not match our wrapper method
-        if (debug_logging_enabled) {
-          Debug(
-              "JITCompilationStarted skipping method: argument counts don't "
-              "match. function_id=",
-              function_id, " token=", function_token,
-              " name=", caller.type.name, ".", caller.name, "()",
-              " expected_number_args=", expected_number_args,
-              " target_arg_count=", target_arg_count);
-        }
-
-          continue;
-        }
-
-      auto method_def_md_token = target.id;
-
-      if (target.is_generic) {
-        if (target.signature.NumberOfTypeArguments() !=
-            method_replacement.wrapper_method.method_signature
-                .NumberOfTypeArguments()) {
-          // Number of generic arguments does not match our wrapper method
-          continue;
-        }
-
-        // we need to emit a method spec to populate the generic arguments
-        wrapper_method_ref =
-            DefineMethodSpec(module_metadata->metadata_emit, wrapper_method_ref,
-                             target.function_spec_signature);
-        method_def_md_token = target.method_def_id;
-      }
-
-      std::vector<WSTRING> sig_types;
-      const auto successfully_parsed_signature = TryParseSignatureTypes(
-          module_metadata->metadata_import, target, sig_types);
-      auto expected_sig_types =
-          method_replacement.target_method.signature_types;
-
-      if (!successfully_parsed_signature) {
-        if (debug_logging_enabled) {
-          Debug(
-              "JITCompilationStarted skipping method: failed to parse "
-              "signature. function_id=",
-              function_id, " token=", function_token,
-              " name=", caller.type.name, ".", caller.name, "()",
-              " successfully_parsed_signature=", successfully_parsed_signature,
-              " sig_types.size()=", sig_types.size(),
-              " expected_sig_types.size()=", expected_sig_types.size());
-        }
-
-        continue;
-      }
-
-      if (sig_types.size() != expected_sig_types.size()) {
-        // we can't safely assume our wrapper methods handle the types
-        if (debug_logging_enabled) {
-          Debug(
-              "JITCompilationStarted skipping method: unexpected type count. "
-              "function_id=",
-              function_id, " token=", function_token,
-              " name=", caller.type.name, ".", caller.name, "()",
-              " successfully_parsed_signature=", successfully_parsed_signature,
-              " sig_types.size()=", sig_types.size(),
-              " expected_sig_types.size()=", expected_sig_types.size());
-        }
-
-          continue;
-        }
-
-      auto is_match = true;
-      for (size_t i = 0; i < expected_sig_types.size(); i++) {
-        if (expected_sig_types[i] == "_"_W) {
-          // We are supposed to ignore this index
-          continue;
-        }
-        if (expected_sig_types[i] != sig_types[i]) {
-          // we have a type mismatch, drop out
+        if (expected_number_args != target_arg_count) {
+          // Number of arguments does not match our wrapper method
           if (debug_logging_enabled) {
             Debug(
-                "JITCompilationStarted skipping method: types don't match. "
+                "JITCompilationStarted skipping method: argument counts don't "
+                "match. function_id=",
+                function_id, " token=", function_token,
+                " name=", caller.type.name, ".", caller.name, "()",
+                " expected_number_args=", expected_number_args,
+                " target_arg_count=", target_arg_count);
+          }
+
+          continue;
+        }
+
+        auto method_def_md_token = target.id;
+
+        if (target.is_generic) {
+          if (target.signature.NumberOfTypeArguments() !=
+              method_replacement.wrapper_method.method_signature
+                  .NumberOfTypeArguments()) {
+            // Number of generic arguments does not match our wrapper method
+            continue;
+          }
+
+          // we need to emit a method spec to populate the generic arguments
+          wrapper_method_ref = DefineMethodSpec(module_metadata->metadata_emit,
+                                                wrapper_method_ref,
+                                                target.function_spec_signature);
+          method_def_md_token = target.method_def_id;
+        }
+
+        std::vector<WSTRING> sig_types;
+        const auto successfully_parsed_signature = TryParseSignatureTypes(
+            module_metadata->metadata_import, target, sig_types);
+        auto expected_sig_types =
+            method_replacement.target_method.signature_types;
+
+        if (!successfully_parsed_signature) {
+          if (debug_logging_enabled) {
+            Debug(
+                "JITCompilationStarted skipping method: failed to parse "
+                "signature. function_id=",
+                function_id, " token=", function_token,
+                " name=", caller.type.name, ".", caller.name, "()",
+                " successfully_parsed_signature=",
+                successfully_parsed_signature,
+                " sig_types.size()=", sig_types.size(),
+                " expected_sig_types.size()=", expected_sig_types.size());
+          }
+
+          continue;
+        }
+
+        if (sig_types.size() != expected_sig_types.size()) {
+          // we can't safely assume our wrapper methods handle the types
+          if (debug_logging_enabled) {
+            Debug(
+                "JITCompilationStarted skipping method: unexpected type count. "
                 "function_id=",
                 function_id, " token=", function_token,
                 " name=", caller.type.name, ".", caller.name, "()",
-                " expected_sig_types[", i, "]=", expected_sig_types[i],
-                " sig_types[", i, "]=", sig_types[i]);
+                " successfully_parsed_signature=",
+                successfully_parsed_signature,
+                " sig_types.size()=", sig_types.size(),
+                " expected_sig_types.size()=", expected_sig_types.size());
           }
+
+          continue;
+        }
+
+        auto is_match = true;
+        for (size_t i = 0; i < expected_sig_types.size(); i++) {
+          if (expected_sig_types[i] == "_"_W) {
+            // We are supposed to ignore this index
+            continue;
+          }
+          if (expected_sig_types[i] != sig_types[i]) {
+            // we have a type mismatch, drop out
+            if (debug_logging_enabled) {
+              Debug(
+                  "JITCompilationStarted skipping method: types don't match. "
+                  "function_id=",
+                  function_id, " token=", function_token,
+                  " name=", caller.type.name, ".", caller.name, "()",
+                  " expected_sig_types[", i, "]=", expected_sig_types[i],
+                  " sig_types[", i, "]=", sig_types[i]);
+            }
 
             is_match = false;
             break;
