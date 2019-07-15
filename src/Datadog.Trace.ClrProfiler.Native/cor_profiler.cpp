@@ -588,6 +588,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
       if (return_type == ELEMENT_TYPE_VOID) {
         // if return value was not expected, pop it off the stack
+        rewriter_wrapper.SetILPosition(pInstr->m_pNext);
         rewriter_wrapper.Pop();
       }
 
