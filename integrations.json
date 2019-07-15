@@ -302,10 +302,10 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.4.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.4.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.CustomIntegration",
           "method": "Wrapper",
-          "signature": "05 00 1C"
+          "signature": "05 02 1c 41 0e 08"
         }
       }
     ]

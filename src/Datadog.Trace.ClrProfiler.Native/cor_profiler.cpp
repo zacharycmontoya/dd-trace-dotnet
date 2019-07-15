@@ -203,7 +203,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       "Microsoft.AspNetCore.Razor.Language"_W,
       "Microsoft.AspNetCore.Mvc.RazorPages"_W,
       "Microsoft.CSharp"_W,
-      "Newtonsoft.Json"_W, 
+      "Newtonsoft.Json"_W,
       "Anonymously Hosted DynamicMethods Assembly"_W,
       "ISymWrapper"_W};
 
@@ -575,9 +575,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       // insert the opcode and signature token as
       // additional arguments for the wrapper method
       ILRewriterWrapper rewriter_wrapper(&rewriter);
-      rewriter_wrapper.SetILPosition(pInstr);
-      rewriter_wrapper.LoadInt32(pInstr->m_opcode);
-      rewriter_wrapper.LoadInt32(method_def_md_token);
+      //rewriter_wrapper.SetILPosition(pInstr);
+      //rewriter_wrapper.LoadInt32(pInstr->m_opcode);
+      //rewriter_wrapper.LoadInt32(pInstr->m_Arg32);
 
       // always use CALL because the wrappers methods are all static
       pInstr->m_opcode = CEE_CALL;
