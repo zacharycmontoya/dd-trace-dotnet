@@ -138,17 +138,19 @@ struct MethodSignature {
     return CorCallingConvention(data.empty() ? 0 : data[0]);
   }
 
+  bool IsCallingConvention(CorCallingConvention calling_convention) const {
+    return isCallConv(CallingConvention(), calling_convention);
+  }
+
   size_t NumberOfTypeArguments() const {
-    if (data.size() > 1 &&
-        (CallingConvention() & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0) {
+    if (data.size() > 1 && IsCallingConvention(IMAGE_CEE_CS_CALLCONV_GENERIC)) {
       return data[1];
     }
     return 0;
   }
 
   size_t NumberOfArguments() const {
-    if (data.size() > 2 &&
-        (CallingConvention() & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0) {
+    if (data.size() > 2 && IsCallingConvention(IMAGE_CEE_CS_CALLCONV_GENERIC)) {
       return data[2];
     }
     if (data.size() > 1) {
