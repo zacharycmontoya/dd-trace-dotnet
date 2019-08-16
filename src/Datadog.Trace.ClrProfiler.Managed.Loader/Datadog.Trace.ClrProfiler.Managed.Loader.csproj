@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <RootNamespace>Datadog.Trace.ClrProfiler.Managed.Loader</RootNamespace>
-    <TargetFrameworks>netstandard1.1</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <OutputPath>..\bin\ProfilerResources\</OutputPath>
 
     <!-- NuGet -->

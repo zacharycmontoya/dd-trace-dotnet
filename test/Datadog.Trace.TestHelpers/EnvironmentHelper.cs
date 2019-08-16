@@ -405,23 +405,13 @@ namespace Datadog.Trace.TestHelpers
             {
                 outputDir = binDir;
             }
-            else if (EnvironmentHelper.GetOS() == "win")
-            {
-                outputDir = Path.Combine(
-                    binDir,
-                    packageVersion,
-                    GetPlatform(),
-                    GetBuildConfiguration(),
-                    GetTargetFramework());
-            }
             else
             {
                 outputDir = Path.Combine(
                     binDir,
                     packageVersion,
                     GetBuildConfiguration(),
-                    GetTargetFramework(),
-                    "publish");
+                    GetTargetFramework());
             }
 
             return outputDir;
