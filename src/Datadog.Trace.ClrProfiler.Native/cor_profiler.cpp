@@ -173,8 +173,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   if (debug_logging_enabled) {
     Debug("ModuleLoadFinished: ", module_id, " ", module_info.assembly.name,
-            " AppDomain ", module_info.assembly.app_domain_id, " ",
-            module_info.assembly.app_domain_name);
+          " AppDomain ", module_info.assembly.app_domain_id, " ",
+          module_info.assembly.app_domain_name);
   }
 
   AppDomainID app_domain_id = module_info.assembly.app_domain_id;
@@ -341,9 +341,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   module_id_to_info_map_[module_id] = module_metadata;
 
   Debug("ModuleLoadFinished emitted new metadata into ", module_id, " ",
-       module_info.assembly.name, " AppDomain ",
-       module_info.assembly.app_domain_id, " ",
-       module_info.assembly.app_domain_name);
+        module_info.assembly.name, " AppDomain ",
+        module_info.assembly.app_domain_id, " ",
+        module_info.assembly.app_domain_name);
   return S_OK;
 }
 
@@ -432,7 +432,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
 #ifdef _WIN32
     hr = RunILStartupHook(module_metadata->metadata_emit, module_id,
-                            function_token);
+                          function_token);
     RETURN_OK_IF_FAILED(hr);
 #else
     Debug("JITCompilationStarted: RunILStartupHook skipped because it is not yet implemented on non-Windows platforms.");
@@ -511,7 +511,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
       // We pass the opcode and mdToken as the last arguments to every wrapper
       // method
-      expected_number_args = expected_number_args - 2;
+      // and for right now a separate byte array
+      expected_number_args = expected_number_args - 3;
 
       if (target.signature.IsInstanceMethod()) {
         // We always pass the instance as the first argument
@@ -637,6 +638,20 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       rewriter_wrapper.SetILPosition(pInstr);
       rewriter_wrapper.LoadInt32(pInstr->m_opcode);
       rewriter_wrapper.LoadInt32(method_def_md_token);
+
+      // Make a method call to load method type arguments
+      if (target.is_generic) {
+        // load the IntPtr for the TypeSpec ?????
+        // load the IntPtr for the MethodSignature
+        mdMethodDef new_method;
+        hr = GenerateStaticMethodSignatureLoader(function_id,
+                                                 module_id,
+                                                 target.function_spec_signature,
+                                                 &new_method);
+        if (SUCCEEDED(hr)) {
+          rewriter_wrapper.CallMember(new_method, false);
+        }
+      }
 
       // always use CALL because the wrappers methods are all static
       pInstr->m_opcode = CEE_CALL;
@@ -1265,5 +1280,144 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assembl
   *pSymbolsArray = (LPBYTE)LockResource(hResSymbols);
 #endif
   return;
+}
+
+//
+//
+//
+HRESULT CorProfiler::GenerateStaticMethodSignatureLoader(const FunctionID function_id,
+                                                         const ModuleID module_id,
+                                                         MethodSignature signature,
+                                                         mdMethodDef* ret_method_token) {
+  ComPtr<IUnknown> metadata_interfaces;
+  auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite,
+                                           IID_IMetaDataImport2,
+                                           metadata_interfaces.GetAddressOf());
+
+  if (FAILED(hr)) {
+    Warn("GenerateStaticMethodSignatureLoader failed to get metadata interface for ", module_id);
+    return S_OK;
+  }
+
+  const auto metadata_import =
+      metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+  const auto metadata_emit =
+      metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+  const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(
+      IID_IMetaDataAssemblyImport);
+  const auto assembly_emit =
+      metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+
+  // Define an AssemblyRef to mscorlib, needed to create TypeRefs later
+  mdModuleRef mscorlib_ref;
+  ASSEMBLYMETADATA metadata{};
+  metadata.usMajorVersion = 4;
+  metadata.usMinorVersion = 0;
+  metadata.usBuildNumber = 0;
+  metadata.usRevisionNumber = 0;
+  BYTE public_key[] = {0xB7, 0x7A, 0x5C, 0x56, 0x19, 0x34, 0xE0, 0x89};
+  assembly_emit->DefineAssemblyRef(public_key, sizeof(public_key),
+                                   "mscorlib"_W.c_str(), &metadata, NULL, 0, 0,
+                                   &mscorlib_ref);
+
+  // Define a TypeRef for System.Object
+  mdTypeRef object_type_ref;
+  hr = metadata_emit->DefineTypeRefByName(
+      mscorlib_ref, "System.Object"_W.c_str(), &object_type_ref);
+  if (FAILED(hr)) {
+    Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
+    return hr;
+  }
+
+  // Define a new TypeDef __DDVoidMethodType__ that extends System.Object
+  mdTypeDef new_type_def;
+  auto type_name = ToWSTRING("__DDSignatureLoaderType" + ToString(function_id));
+  hr = metadata_emit->DefineTypeDef(type_name.c_str(),
+                                    tdAbstract | tdSealed, object_type_ref,
+                                    NULL, &new_type_def);
+  if (FAILED(hr)) {
+    Warn("GenerateVoidILStartupMethod: DefineTypeDef failed");
+    return hr;
+  }
+
+  // Define a new MethodDef
+  BYTE method_signature[] = {
+      IMAGE_CEE_CS_CALLCONV_DEFAULT,  // Calling convention
+      0,                              // Number of parameters
+      ELEMENT_TYPE_SZARRAY,           // Return type: Byte[]
+      ELEMENT_TYPE_U1,
+  };
+
+  auto method_name = ToWSTRING("LoadMethodSignature" + ToString(function_id));
+  hr = metadata_emit->DefineMethod(
+      new_type_def, type_name.c_str(), mdStatic, method_signature,
+      sizeof(method_signature), 0, 0, ret_method_token);
+
+  size_t signature_length = signature.data.size();
+
+  ILRewriter rewriter(this->info_, nullptr, module_id, *ret_method_token);
+  rewriter.InitializeTiny();
+  ILInstr* pFirstInstr = rewriter.GetILList()->m_pNext;
+  ILInstr* pNewInstr = NULL;
+
+  // load size as an int
+  pNewInstr = rewriter.NewILInstr();
+  pNewInstr->m_opcode = CEE_LDC_I4_S;
+  pNewInstr->m_Arg32 = signature_length;
+  rewriter.InsertBefore(pFirstInstr, pNewInstr);
+
+  // Define the byte type ref
+  mdTypeRef byte_type_ref;
+  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, "System.Byte"_W.c_str(),
+                                          &byte_type_ref);
+  if (FAILED(hr)) {
+    Warn("GenerateStaticMethodSignatureLoader: DefineTypeRefByName failed");
+    return hr;
+  }
+
+  // newarr
+  pNewInstr = rewriter.NewILInstr();
+  pNewInstr->m_opcode = CEE_NEWARR;
+  pNewInstr->m_Arg32 = byte_type_ref;
+  rewriter.InsertBefore(pFirstInstr, pNewInstr);
+
+  size_t num_type_arguments = signature.NumberOfTypeArguments();
+
+  for (size_t i = 0; i < signature_length; i++) {
+    // dup
+    pNewInstr = rewriter.NewILInstr();
+    pNewInstr->m_opcode = CEE_DUP;
+    rewriter.InsertBefore(pFirstInstr, pNewInstr);
+
+    // load index (0, 1, 2, 3, etc.)
+    pNewInstr = rewriter.NewILInstr();
+    pNewInstr->m_opcode = CEE_LDC_I4_S;
+    pNewInstr->m_Arg32 = i;
+    rewriter.InsertBefore(pFirstInstr, pNewInstr);
+
+    // load byte at the above index
+    pNewInstr = rewriter.NewILInstr();
+    pNewInstr->m_opcode = CEE_LDC_I4_S;
+    pNewInstr->m_Arg32 = signature.data[i];
+    rewriter.InsertBefore(pFirstInstr, pNewInstr);
+
+    // stelem.i4 (just in case)
+    pNewInstr = rewriter.NewILInstr();
+    pNewInstr->m_opcode = CEE_STELEM_I4;
+    rewriter.InsertBefore(pFirstInstr, pNewInstr);
+  }
+
+  pNewInstr = rewriter.NewILInstr();
+  pNewInstr->m_opcode = CEE_RET;
+  rewriter.InsertBefore(pFirstInstr, pNewInstr);
+
+  hr = rewriter.Export();
+  if (FAILED(hr)) {
+    Warn("GenerateStaticMethodSignatureLoader: Unable to save the IL body. ModuleID=",
+         module_id);
+    return hr;
+  }
+
+  return S_OK;
 }
 }  // namespace trace

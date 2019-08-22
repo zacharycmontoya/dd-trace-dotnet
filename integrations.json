@@ -644,7 +644,7 @@
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.6.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStackRedisIntegration",
           "method": "SendReceive",
-          "signature": "10 01 07 1E 00 1C 1D 1D 05 1C 1C 02 08 08"
+          "signature": "10 01 08 1E 00 1C 1D 1D 05 1C 1C 02 08 08 1D 05"
         }
       }
     ]

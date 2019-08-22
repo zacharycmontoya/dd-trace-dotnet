@@ -29,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="sendWithoutRead">Whether or to send without waiting for the result</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="methodSignature">The method signature of the original method call.</param>
         /// <returns>The original result</returns>
         [InterceptMethod(
             CallerAssembly = "ServiceStack.Redis",
@@ -44,7 +45,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object completePipelineFn,
             bool sendWithoutRead,
             int opCode,
-            int mdToken)
+            int mdToken,
+            byte[] methodSignature)
         {
             Func<object, byte[][], object, object, bool, T> instrumentedMethod = null;
 

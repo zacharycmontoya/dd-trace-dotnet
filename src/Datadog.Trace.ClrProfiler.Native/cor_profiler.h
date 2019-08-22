@@ -49,6 +49,11 @@ class CorProfiler : public CorProfilerBase {
                              const ModuleID module_id,
                              const mdToken function_token);
 
+  HRESULT GenerateStaticMethodSignatureLoader(const FunctionID function_id,
+                                              const ModuleID module_id,
+                                              MethodSignature signature,
+                                              mdMethodDef* ret_method_token);
+
  public:
   CorProfiler() = default;
 
