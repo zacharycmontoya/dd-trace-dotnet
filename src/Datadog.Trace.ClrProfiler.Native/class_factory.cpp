@@ -45,7 +45,14 @@ HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter,
     return CLASS_E_NOAGGREGATION;
   }
 
-  trace::Info("Datadog CLR Profiler ", PROFILER_VERSION);
+#if _WIN64
+  trace::Info("Datadog CLR Profiler ", PROFILER_VERSION, " on Windows/x64");
+#elif _WIN32
+  trace::Info("Datadog CLR Profiler ", PROFILER_VERSION, " on Windows/x86");
+#else
+  trace::Info("Datadog CLR Profiler ", PROFILER_VERSION, " on Linux/x64");
+#endif
+
   trace::Debug("ClassFactory::CreateInstance");
 
   auto profiler = new trace::CorProfiler();
