@@ -59,10 +59,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 callElasticSearch =
                     MethodBuilder<Func<object, object, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithConcreteType(pipelineType)
+                       .WithDeclaringType(pipelineType)
                        .WithMethodGenerics(genericArgument)
                        .WithNamespaceAndNameFilters("Elasticsearch.Net.ElasticsearchResponse`1", "Elasticsearch.Net.RequestData")
-                       .WithParameters(requestData)
+                       .WithArguments(requestData)
                        .Build();
             }
             catch (Exception ex)
@@ -136,9 +136,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 instrumentedMethod =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(CallElasticsearchAsync))
-                       .WithConcreteType(pipeline.GetType())
+                       .WithDeclaringType(pipeline.GetType())
                        .WithMethodGenerics(genericArgument)
-                       .WithParameters(requestData, cancellationToken)
+                       .WithArguments(requestData, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, "Elasticsearch.Net.RequestData", ClrNames.CancellationToken)
                        .ForceMethodDefinitionResolution()
                        .Build();

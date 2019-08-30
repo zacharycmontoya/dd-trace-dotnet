@@ -211,8 +211,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 instrumentedMethod = MethodBuilder<Func<object, object, object, object, object, object>>
                                     .Start(moduleVersionPtr, mdToken, opCode, nameof(BeginInvokeAction))
-                                    .WithConcreteType(asyncActionInvokerType)
-                                    .WithParameters(controllerContext, actionName, callback, state)
+                                    .WithDeclaringType(asyncActionInvokerType)
+                                    .WithArguments(controllerContext, actionName, callback, state)
                                     .WithNamespaceAndNameFilters(
                                          ClrNames.IAsyncResult,
                                          "System.Web.Mvc.ControllerContext",
@@ -294,8 +294,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 instrumentedMethod = MethodBuilder<Func<object, object, bool>>
                                     .Start(moduleVersionPtr, mdToken, opCode, nameof(EndInvokeAction))
-                                    .WithConcreteType(asyncActionInvokerType)
-                                    .WithParameters(asyncResult)
+                                    .WithDeclaringType(asyncActionInvokerType)
+                                    .WithArguments(asyncResult)
                                     .WithNamespaceAndNameFilters(ClrNames.Bool, ClrNames.IAsyncResult)
                                     .Build();
             }

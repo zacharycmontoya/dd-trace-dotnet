@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var p2 = new object();
             var p3 = new ClassA();
             var expected = MethodReference.Get(() => instance.Method(p1, p2, p3));
-            var methodResult = Build<Action<object, object, object, object>>(expected.Name).WithParameters(p1, p2, p3).Build();
+            var methodResult = Build<Action<object, object, object, object>>(expected.Name).WithArguments(p1, p2, p3).Build();
             methodResult(instance, p1, p2, p3);
             Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
         }
@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var p2 = new ClassA();
             var p3 = new ClassA();
             var expected = MethodReference.Get(() => instance.Method(p1, p2, p3));
-            var methodResult = Build<Action<object, object, object, object>>(expected.Name).WithParameters(p1, p2, p3).Build();
+            var methodResult = Build<Action<object, object, object, object>>(expected.Name).WithArguments(p1, p2, p3).Build();
             methodResult(instance, p1, p2, p3);
             Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
         }
@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var p2 = new ClassB();
             var p3 = new ClassB();
             var expected = MethodReference.Get(() => instance.Method(p1, p2, p3));
-            var methodResult = Build<Action<object, object, object, object>>(expected.Name).WithParameters(p1, p2, p3).Build();
+            var methodResult = Build<Action<object, object, object, object>>(expected.Name).WithArguments(p1, p2, p3).Build();
             methodResult(instance, p1, p2, p3);
             Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
         }
@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var p2 = new ClassC();
             var p3 = new ClassC();
             var expected = MethodReference.Get(() => instance.Method(p1, p2, p3));
-            var methodResult = Build<Action<object, object, object, object>>(expected.Name).WithParameters(p1, p2, p3).Build();
+            var methodResult = Build<Action<object, object, object, object>>(expected.Name).WithArguments(p1, p2, p3).Build();
             methodResult(instance, p1, p2, p3);
             Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
         }
@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
             var methodResult =
                 Build<Action<object, object, object, object>>(expected.Name)
-                .WithParameters(p1, p2, p3)
+                .WithArguments(p1, p2, p3)
                 .WithNamespaceAndNameFilters(
                     ClrNames.Void,
                     "Datadog.Trace.ClrProfiler.Managed.Tests.ClassB",
@@ -99,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
             var methodResult =
                 Build<Action<object, object, object, object>>(expected.Name)
-                .WithParameters(p1, p2, p3)
+                .WithArguments(p1, p2, p3)
                 .WithNamespaceAndNameFilters(
                     ClrNames.Void,
                     "Datadog.Trace.ClrProfiler.Managed.Tests.ClassA",
@@ -127,7 +127,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var instance = new ObscenelyAnnoyingClass();
             int parameter = 1;
             var expected = MethodReference.Get(() => instance.Method(parameter));
-            var methodResult = Build<Action<object, int>>(expected.Name).WithParameters(parameter).Build();
+            var methodResult = Build<Action<object, int>>(expected.Name).WithArguments(parameter).Build();
             methodResult(instance, parameter);
             Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
         }
@@ -138,7 +138,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var instance = new ObscenelyAnnoyingClass();
             long parameter = 1;
             var expected = MethodReference.Get(() => instance.Method(parameter));
-            var methodResult = Build<Action<object, long>>(expected.Name).WithParameters(parameter).Build();
+            var methodResult = Build<Action<object, long>>(expected.Name).WithArguments(parameter).Build();
             methodResult(instance, parameter);
             Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
         }
@@ -149,7 +149,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var instance = new ObscenelyAnnoyingClass();
             short parameter = 1;
             var expected = MethodReference.Get(() => instance.Method(parameter));
-            var methodResult = Build<Action<object, short>>(expected.Name).WithParameters(parameter).Build();
+            var methodResult = Build<Action<object, short>>(expected.Name).WithArguments(parameter).Build();
             methodResult(instance, parameter);
             Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
         }
@@ -160,7 +160,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var instance = new ObscenelyAnnoyingClass();
             object parameter = new object();
             var expected = MethodReference.Get(() => instance.Method(parameter));
-            var methodResult = Build<Action<object, object>>(expected.Name).WithParameters(parameter).Build();
+            var methodResult = Build<Action<object, object>>(expected.Name).WithArguments(parameter).Build();
             methodResult(instance, parameter);
             Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
         }
@@ -171,7 +171,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var instance = new ObscenelyAnnoyingClass();
             string parameter = string.Empty;
             var expected = MethodReference.Get(() => instance.Method(parameter));
-            var methodResult = Build<Action<object, string>>(expected.Name).WithParameters(parameter).Build();
+            var methodResult = Build<Action<object, string>>(expected.Name).WithArguments(parameter).Build();
             methodResult(instance, parameter);
             Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
         }
@@ -184,7 +184,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var expected = MethodReference.Get(() => instance.Method(parameter));
             var methodResult =
                 Build<Action<object, object>>(expected.Name)
-                .WithParameters(parameter)
+                .WithArguments(parameter)
                 .WithNamespaceAndNameFilters(ClrNames.Void, ClrNames.Object)
                 .Build();
             methodResult(instance, parameter);
@@ -197,7 +197,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var instance = new ObscenelyAnnoyingGenericClass<ClassA>();
             var parameter = new ClassA();
             var expected = MethodReference.Get(() => instance.Method(parameter));
-            var methodResult = Build<Action<object, object>>(expected.Name, overrideType: instance.GetType()).WithParameters(parameter).Build();
+            var methodResult = Build<Action<object, object>>(expected.Name, overrideType: instance.GetType()).WithArguments(parameter).Build();
             methodResult(instance, parameter);
             Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
         }
@@ -210,7 +210,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var expected = MethodReference.Get(() => instance.Method<int>(parameter));
             var methodResult =
                 Build<Action<object, object>>(expected.Name, overrideType: instance.GetType())
-                   .WithParameters(parameter)
+                   .WithArguments(parameter)
                    .WithMethodGenerics(typeof(int))
                    .Build();
             methodResult(instance, parameter);
@@ -226,7 +226,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var expected = MethodReference.Get(() => instance.Method<int>(parameter1, parameter2));
             var methodResult =
                 Build<Action<object, object, int>>(expected.Name, overrideType: instance.GetType())
-                   .WithParameters(parameter1, parameter2)
+                   .WithArguments(parameter1, parameter2)
                    .WithMethodGenerics(typeof(int))
                    .Build();
             methodResult(instance, parameter1, parameter2);
@@ -244,8 +244,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
             var methodResult = MethodBuilder<Action<object, object>> // Proper use should be Action<object, string>
                               .Start(_moduleVersionId, wrongMethod.MetadataToken, (int)OpCodeValue.Callvirt, "Method")
-                              .WithConcreteType(_testType)
-                              .WithParameters(parameter) // The parameter is the saving grace
+                              .WithDeclaringType(_testType)
+                              .WithArguments(parameter) // The parameter is the saving grace
                               .Build();
 
             methodResult(instance, parameter);
@@ -256,7 +256,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         {
             return MethodBuilder<T>
                   .Start(_moduleVersionId, 0, (int)OpCodeValue.Callvirt, methodName)
-                  .WithConcreteType(overrideType ?? _testType);
+                  .WithDeclaringType(overrideType ?? _testType);
         }
     }
 }

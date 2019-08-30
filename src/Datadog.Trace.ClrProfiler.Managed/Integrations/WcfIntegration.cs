@@ -58,8 +58,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod = MethodBuilder<Func<object, object, object, bool>>
                                     .Start(moduleVersionPtr, mdToken, opCode, nameof(HandleRequest))
-                                    .WithConcreteType(declaringType)
-                                    .WithParameters(requestContext, currentOperationContext)
+                                    .WithDeclaringType(declaringType)
+                                    .WithArguments(requestContext, currentOperationContext)
                                     .WithNamespaceAndNameFilters(
                                          ClrNames.Bool,
                                          "System.ServiceModel.Channels.RequestContext",

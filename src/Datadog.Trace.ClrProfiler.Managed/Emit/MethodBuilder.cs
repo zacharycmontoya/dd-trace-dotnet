@@ -77,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 methodName);
         }
 
-        public MethodBuilder<TDelegate> WithConcreteType(Type type)
+        public MethodBuilder<TDelegate> WithDeclaringType(Type type)
         {
             _concreteType = type;
             _concreteTypeName = type?.FullName;
@@ -90,13 +90,13 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return this;
         }
 
-        public MethodBuilder<TDelegate> WithParameters(params object[] parameters)
+        public MethodBuilder<TDelegate> WithArguments(params object[] arguments)
         {
-            _parameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
+            _parameters = arguments ?? throw new ArgumentNullException(nameof(arguments));
             return this;
         }
 
-        public MethodBuilder<TDelegate> WithExplicitParameterTypes(params Type[] types)
+        public MethodBuilder<TDelegate> WithParameterTypes(params Type[] types)
         {
             _explicitParameterTypes = types;
             return this;

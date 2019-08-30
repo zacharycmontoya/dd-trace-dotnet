@@ -170,8 +170,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 instrumentedMethod =
                     MethodBuilder<Action<object, object, object, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(BeforeAction))
-                       .WithConcreteType(DiagnosticSourceType)
-                       .WithParameters(diagnosticSource, actionDescriptor, httpContext, routeData)
+                       .WithDeclaringType(DiagnosticSourceType)
+                       .WithArguments(diagnosticSource, actionDescriptor, httpContext, routeData)
                        .WithNamespaceAndNameFilters(
                             ClrNames.Void,
                             ClrNames.Ignore,
@@ -261,8 +261,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 instrumentedMethod =
                     MethodBuilder<Action<object, object, object, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(AfterAction))
-                       .WithConcreteType(DiagnosticSourceType)
-                       .WithParameters(diagnosticSource, actionDescriptor, httpContext, routeData)
+                       .WithDeclaringType(DiagnosticSourceType)
+                       .WithArguments(diagnosticSource, actionDescriptor, httpContext, routeData)
                        .WithNamespaceAndNameFilters(
                             ClrNames.Void,
                             ClrNames.Ignore,
@@ -335,8 +335,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 instrumentedMethod =
                     MethodBuilder<Action<object>>
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(Rethrow))
-                       .WithConcreteType(ResourceInvokerType)
-                       .WithParameters(context)
+                       .WithDeclaringType(ResourceInvokerType)
+                       .WithArguments(context)
                        .WithNamespaceAndNameFilters(ClrNames.Void, ClrNames.Ignore)
                        .Build();
             }

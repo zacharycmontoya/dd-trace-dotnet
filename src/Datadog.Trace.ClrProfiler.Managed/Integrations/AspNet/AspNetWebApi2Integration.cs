@@ -85,8 +85,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 instrumentedMethod = MethodBuilder<Func<object, object, CancellationToken, Task<HttpResponseMessage>>>
                                     .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteAsync))
-                                    .WithConcreteType(httpControllerType)
-                                    .WithParameters(controllerContext, cancellationToken)
+                                    .WithDeclaringType(httpControllerType)
+                                    .WithArguments(controllerContext, cancellationToken)
                                     .WithNamespaceAndNameFilters(
                                          ClrNames.HttpResponseMessageTask,
                                          HttpControllerContextTypeName,

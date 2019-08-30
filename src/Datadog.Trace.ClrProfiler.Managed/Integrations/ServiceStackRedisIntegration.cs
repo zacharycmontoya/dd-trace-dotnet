@@ -61,8 +61,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 instrumentedMethod =
                     MethodBuilder<Func<object, byte[][], object, object, bool, T>>
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(SendReceive))
-                       .WithConcreteType(instrumentedType)
-                       .WithParameters(cmdWithBinaryArgs, fn, completePipelineFn, sendWithoutRead)
+                       .WithDeclaringType(instrumentedType)
+                       .WithArguments(cmdWithBinaryArgs, fn, completePipelineFn, sendWithoutRead)
                        .WithMethodGenerics(typeof(T))
                        .WithNamespaceAndNameFilters(ClrNames.Ignore, "System.Byte[][]", "System.Func`1", "System.Action`1", ClrNames.Bool)
                        .Build();

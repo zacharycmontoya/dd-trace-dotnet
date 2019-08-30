@@ -76,8 +76,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                 instrumentedMethod =
                     MethodBuilder<Func<object, object, object, object, T>>
                         .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteSyncImpl))
-                        .WithConcreteType(multiplexerType)
-                        .WithParameters(message, processor, server)
+                        .WithDeclaringType(multiplexerType)
+                        .WithArguments(message, processor, server)
                         .WithMethodGenerics(genericType)
                         .WithNamespaceAndNameFilters(
                             ClrNames.Ignore,
@@ -166,8 +166,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                 instrumentedMethod =
                     MethodBuilder<Func<object, object, object, object, object, Task<T>>>
                         .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteAsyncImpl))
-                        .WithConcreteType(multiplexerType)
-                        .WithParameters(message, processor, state, server)
+                        .WithDeclaringType(multiplexerType)
+                        .WithArguments(message, processor, state, server)
                         .WithMethodGenerics(genericType)
                         .WithNamespaceAndNameFilters(
                             ClrNames.GenericTask,

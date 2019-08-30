@@ -64,8 +64,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 execute =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithConcreteType(wireProtocolType)
-                       .WithParameters(connection, cancellationToken)
+                       .WithDeclaringType(wireProtocolType)
+                       .WithArguments(connection, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.Void, "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken)
                        .Build();
             }
@@ -135,8 +135,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 execute =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithConcreteType(wireProtocolType)
-                       .WithParameters(connection, cancellationToken)
+                       .WithDeclaringType(wireProtocolType)
+                       .WithArguments(connection, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.Ignore, "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken)
                        .Build();
             }
@@ -208,9 +208,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 executeAsync =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithConcreteType(wireProtocolType)
+                       .WithDeclaringType(wireProtocolType)
                        .WithDeclaringTypeGenerics(wireProtocolGenericArgs)
-                       .WithParameters(connection, cancellationToken)
+                       .WithArguments(connection, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.Task, "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken)
                        .Build();
             }
@@ -272,9 +272,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 executeAsync =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithConcreteType(wireProtocolType)
+                       .WithDeclaringType(wireProtocolType)
                        .WithDeclaringTypeGenerics(wireProtocolGenericArgs)
-                       .WithParameters(connection, cancellationToken)
+                       .WithArguments(connection, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken)
                        .Build();
             }

@@ -61,8 +61,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 instrumentedMethod =
                     MethodBuilder<Func<object, CommandBehavior, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteDbDataReader))
-                       .WithConcreteType(instrumentedType)
-                       .WithParameters(commandBehavior)
+                       .WithDeclaringType(instrumentedType)
+                       .WithArguments(commandBehavior)
                        .WithNamespaceAndNameFilters(DbDataReaderTypeName, CommandBehaviorTypeName)
                        .Build();
             }
@@ -134,8 +134,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 instrumentedMethod =
                     MethodBuilder<Func<object, CommandBehavior, object, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteDbDataReaderAsync))
-                       .WithConcreteType(instrumentedType)
-                       .WithParameters(commandBehavior, cancellationToken)
+                       .WithDeclaringType(instrumentedType)
+                       .WithArguments(commandBehavior, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, CommandBehaviorTypeName, ClrNames.CancellationToken)
                        .Build();
             }

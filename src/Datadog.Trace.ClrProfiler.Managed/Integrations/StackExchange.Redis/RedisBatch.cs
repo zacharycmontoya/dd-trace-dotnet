@@ -112,14 +112,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             {
                 instrumentedMethod = MethodBuilder<Func<object, object, object, object, Task<T>>>
                                         .Start(moduleVersionPtr, mdToken, callOpCode, nameof(ExecuteAsync))
-                                        .WithConcreteType(_redisBaseType)
+                                        .WithDeclaringType(_redisBaseType)
                                         .WithMethodGenerics(typeof(T))
-                                        .WithParameters(message, processor, server)
+                                        .WithArguments(message, processor, server)
                                         .WithNamespaceAndNameFilters(
-                                             ClrNames.GenericTask,
-                                             "StackExchange.Redis.Message",
-                                             "StackExchange.Redis.ResultProcessor`1",
-                                             "StackExchange.Redis.ServerEndPoint")
+                                            ClrNames.GenericTask,
+                                            "StackExchange.Redis.Message",
+                                            "StackExchange.Redis.ResultProcessor`1",
+                                            "StackExchange.Redis.ServerEndPoint")
                                         .Build();
             }
             catch (Exception ex)

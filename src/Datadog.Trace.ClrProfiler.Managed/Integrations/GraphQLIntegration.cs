@@ -95,8 +95,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 instrumentedMethod =
                     MethodBuilder<Func<object, object, object, object, object, object, object, object>>
                         .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                        .WithConcreteType(documentValidatorInstanceType)
-                        .WithParameters(originalQuery, schema, document, rules, userContext, inputs)
+                        .WithDeclaringType(documentValidatorInstanceType)
+                        .WithArguments(originalQuery, schema, document, rules, userContext, inputs)
                         .WithNamespaceAndNameFilters(
                             GraphQLValidationResultInterfaceName,
                             ClrNames.String,
@@ -184,8 +184,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 instrumentedMethod =
                     MethodBuilder<Func<object, object, object>>
                         .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                        .WithConcreteType(executionStrategyInstanceType)
-                        .WithParameters(context)
+                        .WithDeclaringType(executionStrategyInstanceType)
+                        .WithArguments(context)
                         .WithNamespaceAndNameFilters(ClrNames.GenericTask, "GraphQL.Execution.ExecutionContext")
                         .Build();
             }
