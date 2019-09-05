@@ -1,7 +1,6 @@
 using System;
 using System.Data;
 using System.Data.Common;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
@@ -24,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string SystemDataCommonDbDataReader = "System.Data.Common.DbDataReader";
         private const string SystemDataCommonCommandBehavior = "System.Data.CommandBehavior";
 
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(AdoNetIntegration));
+        private static readonly ILog Log = LogProvider.GetCurrentClassLogger(AdoNetIntegration));
 
         /// <summary>
         /// Wrapper method that instruments <see cref="System.Data.Common.DbCommand.ExecuteDbDataReader"/>.
@@ -48,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             int mdToken,
             long moduleVersionPtr)
         {
-            Func<object, CommandBehavior, object> instrumentedMethod = null;
+            Func<object, CommandBehavior, object> instrumentedMethod;
             var commandBehavior = (CommandBehavior)behavior;
 
             try
@@ -64,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {SystemDataCommonDbCommand}.{nameof(ExecuteDbDataReader)}(...)", ex);
+                Log.ErrorException($"Error resolving System.Data.Common.DbCommand.{nameof(ExecuteDbDataReader)}(...)", ex);
                 throw;
             }
 
@@ -111,7 +110,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var instrumentedType = typeof(DbCommand);
             var dataReaderType = typeof(DbDataReader);
             var commandBehavior = (CommandBehavior)behavior;
-            Func<object, CommandBehavior, object, object> instrumentedMethod = null;
+            Func<object, CommandBehavior, object, object> instrumentedMethod;
 
             try
             {
@@ -125,7 +124,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {SystemDataCommonDbCommand}.{nameof(ExecuteDbDataReaderAsync)}(...)", ex);
+                Log.ErrorException($"Error resolving System.Data.Common.DbCommand.{nameof(ExecuteDbDataReaderAsync)}(...)", ex);
                 throw;
             }
 
@@ -134,7 +133,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 taskResultType: dataReaderType,
                 nameOfIntegrationMethod: nameof(ExecuteDbDataReaderAsyncInternal),
                 integrationType: typeof(AdoNetIntegration),
-                parametersToPass: new object[] { @this, behavior, cancellationToken, instrumentedMethod });
+                parametersToPass: new[] { @this, behavior, cancellationToken, instrumentedMethod });
         }
 
         private static async Task<T> ExecuteDbDataReaderAsyncInternal<T>(
