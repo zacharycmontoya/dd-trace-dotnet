@@ -1,60 +1,79 @@
 using System;
+using System.Data.SqlClient;
 using System.Linq;
-using Microsoft.EntityFrameworkCore;
 
 namespace Samples.SqlServer
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main()
         {
-            using (var db = new BloggingContext())
+            var connectionString = GetConnectionString();
+
+            using (var connection = new SqlConnection(connectionString))
             {
-                // create database if missing
-                db.Database.EnsureCreated();
+                connection.Open();
 
-                var name = "test";
-
-                var blog = (from b in db.Blogs where b.Name == name select b).FirstOrDefault();
-                if (blog == null)
+                using (var command = connection.CreateCommand())
                 {
-                    blog = new Blog { Name = name };
-                    db.Blogs.Add(blog);
-                    db.SaveChanges();
+                    command.CommandText = "DROP TABLE IF EXISTS Employees; CREATE TABLE Employees (Id int PRIMARY KEY CLUSTERED, Name nvarchar(100));";
+                    int records = command.ExecuteNonQuery();
                 }
 
-                // Display all Blogs from the database synchronously
-                var query = from b in db.Blogs
-                            orderby b.Name
-                            select b;
-
-                Console.WriteLine("All blogs in the database from the synchronous call:");
-                foreach (var item in query)
+                using (var command = connection.CreateCommand())
                 {
-                    Console.WriteLine(item.Name);
+                    command.Parameters.AddWithValue("Id", 1);
+                    command.Parameters.AddWithValue("Name", "Name1");
+                    command.CommandText = "INSERT INTO Employees (Id, Name) VALUES (@Id, @Name);";
+                    int records = command.ExecuteNonQuery();
                 }
 
-                var asyncName = "test-async";
-
-                var asyncBlog = (from b in db.Blogs where b.Name == asyncName select b).FirstOrDefaultAsync();
-                if (asyncBlog.Result == null)
+                using (var command = connection.CreateCommand())
                 {
-                    blog = new Blog { Name = asyncName };
-                    db.Blogs.Add(blog);
-                    db.SaveChangesAsync().Wait();
+                    command.Parameters.AddWithValue("Id", 1);
+                    command.CommandText = "SELECT Name FROM Employees WHERE Id=@Id;";
+                    var name = command.ExecuteScalar() as string;
                 }
 
-                // Display all Blogs from the database asynchronously
-                var asyncQueryTask = db.Blogs.Where(b => b.Name == asyncName).ToListAsync();
-
-                asyncQueryTask.Wait();
-
-                Console.WriteLine("All blogs in the database from the async call:");
-                foreach (var item in asyncQueryTask.Result)
+                using (var command = connection.CreateCommand())
                 {
-                    Console.WriteLine(item.Name);
+                    command.Parameters.AddWithValue("Name", "Name2");
+                    command.Parameters.AddWithValue("Id", 1);
+                    command.CommandText = "UPDATE Employees SET Name=@Name WHERE Id=@Id;";
+                    int records = command.ExecuteNonQuery();
+                }
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.Parameters.AddWithValue("Id", 1);
+                    command.CommandText = "SELECT * FROM Employees WHERE Id=@Id;";
+
+                    using (var reader = command.ExecuteReader())
+                    {
+                        var employees = reader.AsDataRecords()
+                                              .Select(
+                                                   r => new
+                                                   {
+                                                       Id = (int)r["Id"],
+                                                       Name = (string)r["Name"]
+                                                   })
+                                              .ToList();
+                    }
+                }
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.Parameters.AddWithValue("Id", 1);
+                    command.CommandText = "DELETE FROM Employees WHERE Id=@Id;";
+                    int records = command.ExecuteNonQuery();
                 }
             }
+        }
+
+        private static string GetConnectionString()
+        {
+            return Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
+                   @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;";
         }
     }
 }

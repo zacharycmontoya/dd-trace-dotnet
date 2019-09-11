@@ -1,0 +1,84 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+
+namespace Samples.SqlServer
+{
+    internal class Program
+    {
+        private static async Task Main()
+        {
+            RunSync();
+
+            await RunAsync();
+        }
+
+        private static void RunSync()
+        {
+            using (var db = new BloggingContext())
+            {
+                // delete and recreate database
+                db.Database.EnsureDeleted();
+                db.Database.EnsureCreated();
+
+                var name = "test";
+
+                var blog = (from b in db.Blogs where b.Name == name select b).FirstOrDefault();
+                if (blog == null)
+                {
+                    blog = new Blog { Name = name };
+                    db.Blogs.Add(blog);
+                    db.SaveChanges();
+                }
+
+                // Display all Blogs from the database
+                var query = from b in db.Blogs
+                            orderby b.Name
+                            select b;
+
+                var blogs = query.ToList();
+
+                Console.WriteLine("All blogs in the database:");
+                foreach (var item in blogs)
+                {
+                    Console.WriteLine(item.Name);
+                }
+            }
+        }
+
+        private static async Task RunAsync()
+        {
+            using (var db = new BloggingContext())
+            {
+                // delete and recreate database
+                db.Database.EnsureDeleted();
+                db.Database.EnsureCreated();
+
+                var name = "test-async";
+
+                var blog = (from b in db.Blogs where b.Name == name select b).FirstOrDefault();
+                if (blog == null)
+                {
+                    blog = new Blog { Name = name };
+                    await db.Blogs.AddAsync(blog);
+                    await db.SaveChangesAsync();
+                }
+
+                // Display all Blogs from the database
+                var query = from b in db.Blogs
+                            orderby b.Name
+                            select b;
+
+                var blogs = await query.ToListAsync();
+
+                Console.WriteLine("All blogs in the database:");
+
+                foreach (var item in blogs)
+                {
+                    Console.WriteLine(item.Name);
+                }
+            }
+        }
+    }
+}

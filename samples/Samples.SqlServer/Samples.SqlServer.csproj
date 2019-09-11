@@ -1,18 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">2.1.2</ApiVersion>
-
-    <!-- override to remove net452 -->
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp2.1</TargetFrameworks>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">4.1.0</ApiVersion>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(ApiVersion)" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(ApiVersion)" />
+    <PackageReference Include="System.Data.SqlClient" Version="$(ApiVersion)" />
   </ItemGroup>
 
 </Project>
