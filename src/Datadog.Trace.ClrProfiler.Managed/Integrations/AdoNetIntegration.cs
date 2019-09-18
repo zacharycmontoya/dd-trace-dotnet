@@ -4,7 +4,6 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
-using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
@@ -23,12 +22,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string SystemDataCommonDbDataReader = "System.Data.Common.DbDataReader";
         private const string SystemDataCommonCommandBehavior = "System.Data.CommandBehavior";
 
-        private static readonly ILog Log = LogProvider.GetCurrentClassLogger(AdoNetIntegration));
+        private static readonly ILog Log = LogProvider.GetCurrentClassLogger();
 
         /// <summary>
         /// Wrapper method that instruments <see cref="System.Data.Common.DbCommand.ExecuteDbDataReader"/>.
         /// </summary>
-        /// <param name="this">The <see cref="DbCommand"/> that is references by the "this" pointer in the instrumented method.</param>
+        /// <param name="command">The <see cref="DbCommand"/> that is references by the "this" pointer in the instrumented method.</param>
         /// <param name="behavior">A value from <see cref="CommandBehavior"/>.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
@@ -41,24 +40,22 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static object ExecuteDbDataReader(
-            object @this,
+            object command,
             int behavior,
             int opCode,
             int mdToken,
             long moduleVersionPtr)
         {
             Func<object, CommandBehavior, object> instrumentedMethod;
-            var commandBehavior = (CommandBehavior)behavior;
 
             try
             {
-                var instrumentedType = typeof(DbCommand);
                 instrumentedMethod =
                     MethodBuilder<Func<object, CommandBehavior, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteDbDataReader))
-                       .WithConcreteType(instrumentedType)
-                       .WithParameters(commandBehavior)
-                       .WithNamespaceAndNameFilters(SystemDataCommonDbDataReader, SystemDataCommonCommandBehavior)
+                       .WithConcreteType(typeof(DbCommand))
+                       .WithExplicitParameterTypes(typeof(CommandBehavior))
+                       .WithNamespaceAndNameFilters("System.Data.Common.DbDataReader", "System.Data.CommandBehavior")
                        .Build();
             }
             catch (Exception ex)
@@ -67,11 +64,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            using (var scope = CreateScope((DbCommand)@this))
+            using (var scope = CreateScope((DbCommand)command))
             {
                 try
                 {
-                    return instrumentedMethod(@this, commandBehavior);
+                    return instrumentedMethod(command, (CommandBehavior)behavior);
                 }
                 catch (Exception ex)
                 {
@@ -84,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <summary>
         /// Wrapper method that instruments <see cref="System.Data.Common.DbCommand.ExecuteDbDataReader"/>.
         /// </summary>
-        /// <param name="this">The <see cref="DbCommand"/> that is references by the "this" pointer in the instrumented method.</param>
+        /// <param name="command">The <see cref="DbCommand"/> that is references by the "this" pointer in the instrumented method.</param>
         /// <param name="behavior">A value from <see cref="CommandBehavior"/>.</param>
         /// <param name="cancellationTokenSource">A cancellation token source that can be used to cancel the async operation.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
@@ -98,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static object ExecuteDbDataReaderAsync(
-            object @this,
+            object command,
             int behavior,
             object cancellationTokenSource,
             int opCode,
@@ -107,19 +104,34 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
-            var instrumentedType = typeof(DbCommand);
-            var dataReaderType = typeof(DbDataReader);
-            var commandBehavior = (CommandBehavior)behavior;
-            Func<object, CommandBehavior, object, object> instrumentedMethod;
+
+            return ExecuteDbDataReaderAsyncInternal(
+                (DbCommand)command,
+                (CommandBehavior)behavior,
+                cancellationToken,
+                opCode,
+                mdToken,
+                moduleVersionPtr);
+        }
+
+        private static async Task<DbDataReader> ExecuteDbDataReaderAsyncInternal(
+            DbCommand command,
+            CommandBehavior commandBehavior,
+            CancellationToken cancellationToken,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
+        {
+            Func<DbCommand, CommandBehavior, CancellationToken, Task<DbDataReader>> instrumentedMethod;
 
             try
             {
                 instrumentedMethod =
-                    MethodBuilder<Func<object, CommandBehavior, object, object>>
+                    MethodBuilder<Func<DbCommand, CommandBehavior, CancellationToken, Task<DbDataReader>>>
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteDbDataReaderAsync))
-                       .WithConcreteType(instrumentedType)
+                       .WithConcreteType(typeof(DbCommand))
                        .WithParameters(commandBehavior, cancellationToken)
-                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, SystemDataCommonCommandBehavior, ClrNames.CancellationToken)
+                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, "System.Data.CommandBehavior", ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
@@ -128,26 +140,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            return AsyncHelper.InvokeGenericTaskDelegate(
-                owningType: instrumentedType,
-                taskResultType: dataReaderType,
-                nameOfIntegrationMethod: nameof(ExecuteDbDataReaderAsyncInternal),
-                integrationType: typeof(AdoNetIntegration),
-                parametersToPass: new[] { @this, behavior, cancellationToken, instrumentedMethod });
-        }
-
-        private static async Task<T> ExecuteDbDataReaderAsyncInternal<T>(
-            DbCommand command,
-            CommandBehavior behavior,
-            CancellationToken cancellationToken,
-            Func<object, CommandBehavior, object, object> instrumentedMethod)
-        {
             using (var scope = CreateScope(command))
             {
                 try
                 {
-                    var task = (Task<T>)instrumentedMethod(command, behavior, cancellationToken);
-                    return await task.ConfigureAwait(false);
+                    return await instrumentedMethod(command, commandBehavior, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
