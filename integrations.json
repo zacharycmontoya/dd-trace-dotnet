@@ -650,6 +650,109 @@
     ]
   },
   {
+    "name": "SqlClient",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data",
+          "type": "System.Data.SqlClient.SqlCommand",
+          "method": "ExecuteDataReader",
+          "signature_types": [
+            "System.Data.Common.SqlDataReader",
+            "System.Data.CommandBehavior"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.SqlClientIntegration",
+          "method": "ExecuteDataReader",
+          "signature": "00 05 1C 1C 08 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data.SqlClient",
+          "type": "System.Data.SqlClient.SqlCommand",
+          "method": "ExecuteDataReader",
+          "signature_types": [
+            "System.Data.Common.SqlDataReader",
+            "System.Data.CommandBehavior"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.SqlClientIntegration",
+          "method": "ExecuteDataReader",
+          "signature": "00 05 1C 1C 08 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data",
+          "type": "System.Data.Common.SqlCommand",
+          "method": "ExecuteDbDataReaderAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>",
+            "System.Data.CommandBehavior",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.SqlClientIntegration",
+          "method": "ExecuteDbDataReaderAsync",
+          "signature": "00 06 1C 1C 08 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data.SqlClient",
+          "type": "System.Data.Common.SqlCommand",
+          "method": "ExecuteDbDataReaderAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>",
+            "System.Data.CommandBehavior",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.SqlClientIntegration",
+          "method": "ExecuteDbDataReaderAsync",
+          "signature": "00 06 1C 1C 08 1C 08 08 0A"
+        }
+      }
+    ]
+  },
+  {
     "name": "StackExchangeRedis",
     "method_replacements": [
       {
