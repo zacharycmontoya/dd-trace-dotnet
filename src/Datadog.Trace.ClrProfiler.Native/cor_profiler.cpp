@@ -148,7 +148,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   } else if (runtime_information_.is_core()) {
     // From .NET Core 1.x - 3.x, the major version is reported as 4
     // Use workaround to determine actual product version
-    if (runtime_information_.major_version == 4) {
+    if (runtime_information_.major_version <= 4) {
       // ICorProfilerInfo9: .NET Core 2.2+
       // ICorProfilerInfo10: .NET Core 3.0+
       ICorProfilerInfo10* unused_info;
@@ -160,6 +160,11 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
       } else {
         Info("Runtime: .NET Core 1.0-2.1");
       }
+    } else {
+      Info("Runtime: .NET Core ",
+            runtime_information_.major_version, ".",
+            runtime_information_.minor_version, ".",
+            runtime_information_.build_version);
     }
   }
 
