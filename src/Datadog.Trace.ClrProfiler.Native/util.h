@@ -31,6 +31,10 @@ std::vector<WSTRING> GetEnvironmentValues(const WSTRING &name,
 // GetEnvironmentValues calls GetEnvironmentValues with a semicolon delimiter.
 std::vector<WSTRING> GetEnvironmentValues(const WSTRING &name);
 
+// GetFileLineOrDefault returns the next line from a file stream or a default value
+// if the line is empty.
+WSTRING GetFileLineOrDefault(std::ifstream &file_stream, const WSTRING &default_string);
+
 template <class Container>
 bool Contains(const Container &items,
               const typename Container::value_type &value) {

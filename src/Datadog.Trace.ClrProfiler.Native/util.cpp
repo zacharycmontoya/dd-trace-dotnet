@@ -1,11 +1,13 @@
 #include "util.h"
 
 #include <cwctype>
+#include <fstream>
 #include <iterator>
 #include <sstream>
 #include <string>
 #include <vector>
 #include "miniutf.hpp"
+#include "string.h"  // NOLINT
 #include "pal.h"
 
 namespace trace {
@@ -80,6 +82,18 @@ std::vector<WSTRING> GetEnvironmentValues(const WSTRING &name,
 
 std::vector<WSTRING> GetEnvironmentValues(const WSTRING &name) {
   return GetEnvironmentValues(name, L';');
+}
+
+WSTRING GetFileLineOrDefault(std::ifstream &file_stream,
+                             const WSTRING &default_string) {
+  std::string line;
+  std::getline(file_stream, line);
+
+  if (line.empty()) {
+    return default_string;
+  } else {
+    return ToWSTRING(line);
+  }
 }
 
 }  // namespace trace

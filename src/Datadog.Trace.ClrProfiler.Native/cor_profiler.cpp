@@ -140,6 +140,37 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   runtime_information_ = GetRuntimeInformation(this->info_);
+  if (runtime_information_.is_desktop()) {
+    Info("Runtime: .NET Framework ",
+          runtime_information_.major_version, ".",
+          runtime_information_.minor_version, ".",
+          runtime_information_.build_version);
+  } else if (runtime_information_.is_core()) {
+    // From .NET Core 1.x - 3.x, the major version is reported as 4
+    // Use workaround to determine actual product version
+    if (runtime_information_.major_version == 4) {
+      // ICorProfilerInfo8: .NET Core 2.0
+      // ICorProfilerInfo9: .NET Core 2.2+
+      // ICorProfilerInfo10: .NET Core 3.0+
+      ICorProfilerInfo9* unused_info;
+
+      if (info_->QueryInterface<ICorProfilerInfo9>(&unused_info)) {
+        Info("Runtime: .NET Core 2.2");
+      } else {
+        Info("Runtime: .NET Core 1.0-2.1");
+      }
+    }
+  }
+
+  // Print the system information
+  auto system_info = GetSystemInfo();
+  Info("Operating System: ", system_info.operating_system);
+  Info("Processor: ", system_info.processor);
+#ifdef BIT64
+  Info("Profiler bitness: 64-bit");
+#else
+  Info("Profiler bitness: 32-bit");
+#endif
 
   // we're in!
   Info("Profiler attached.");
