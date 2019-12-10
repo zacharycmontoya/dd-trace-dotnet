@@ -2,9 +2,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Mvc;
+using Samples.AspNetMvc5.Models;
 
 namespace Samples.AspNetMvc5.Controllers
 {
@@ -12,6 +14,32 @@ namespace Samples.AspNetMvc5.Controllers
     {
         public ActionResult Index()
         {
+            Type tracerType = Type.GetType("Datadog.Trace.Tracer, Datadog.Trace", throwOnError: false);
+            Type instrumentationType = Type.GetType("Datadog.Trace.ClrProfiler.Instrumentation, Datadog.Trace.ClrProfiler.Managed", throwOnError:false);
+
+            if (tracerType == null)
+            {
+                ViewBag.TracerAssemblyLocation = "Type \"Datadog.Trace.Tracer\" not loaded";
+            }
+            else
+            {
+                ViewBag.TracerAssemblyLocation = tracerType.Assembly.Location;
+
+                PropertyInfo property = instrumentationType.GetProperty("ProfilerAttached", BindingFlags.Static | BindingFlags.Public);
+                ViewBag.ProfilerAttached = property.GetValue(null)?.ToString() ?? "(null)";
+            }
+
+            if (instrumentationType == null)
+            {
+                ViewBag.ClrProfilerAssemblyLocation = "Type \"Datadog.Trace.ClrProfiler.Instrumentation\" not loaded";
+            }
+            else
+            {
+                ViewBag.ClrProfilerAssemblyLocation = instrumentationType.Assembly.Location;
+            }
+
+            string[] moduleNames = this.HttpContext.ApplicationInstance.Modules.AllKeys;
+
             var prefixes = new[] { "COR_", "CORECLR_", "DD_", "DATADOG_" };
 
             var envVars = from envVar in Environment.GetEnvironmentVariables().Cast<DictionaryEntry>()
@@ -22,7 +50,11 @@ namespace Samples.AspNetMvc5.Controllers
                           orderby key
                           select new KeyValuePair<string, string>(key, value);
 
-            return View(envVars.ToList());
+            return View(new HomeModel
+                        {
+                            HttpModules = moduleNames,
+                            EnvVars = envVars
+                        });
         }
 
         [Route("delay/{seconds}")]

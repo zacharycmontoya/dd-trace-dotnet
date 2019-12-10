@@ -1,4 +1,5 @@
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 
 namespace Samples.AspNetMvc5.Data
 {

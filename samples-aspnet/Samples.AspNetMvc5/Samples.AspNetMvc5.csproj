@@ -103,14 +103,13 @@
     <Compile Include="Areas\Datadog\DatadogAreaRegistration.cs" />
     <Compile Include="Controllers\ContactsController.cs" />
     <Compile Include="Controllers\ApiController.cs" />
-    <Compile Include="Controllers\DistributedTracingApiController.cs" />
-    <Compile Include="Controllers\DistributedTracingMvcController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Data\Contact.cs" />
     <Compile Include="Data\SampleDbContext.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Models\HomeModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -129,6 +128,8 @@
     <Content Include="Views\Contacts\Details.cshtml" />
     <Content Include="Views\Contacts\Edit.cshtml" />
     <Content Include="Views\Contacts\Index.cshtml" />
+    <None Include="Properties\PublishProfiles\Azure App Service - Web Deploy.pubxml" />
+    <None Include="Properties\PublishProfiles\Azure VM - Web Deploy.pubxml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -137,22 +138,12 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="App_Data\" />
     <Folder Include="Areas\Datadog\Models\" />
-    <Folder Include="Models\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\sample-libs\Samples.Shared\Samples.Shared.csproj">
       <Project>{b4ae8b0f-c2b2-41df-88bb-d97e267d8964}</Project>
       <Name>Samples.Shared</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
-      <Project>{85f35aaf-d102-4960-8b41-3bd9cbd0e77f}</Project>
-      <Name>Datadog.Trace.ClrProfiler.Managed</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj">
-      <Project>{5dfdf781-f24c-45b1-82ef-9125875a80a4}</Project>
-      <Name>Datadog.Trace</Name>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
@@ -228,9 +219,9 @@
         <WebProjectProperties>
           <UseIIS>True</UseIIS>
           <AutoAssignPort>True</AutoAssignPort>
-          <DevelopmentServerPort>50449</DevelopmentServerPort>
+          <DevelopmentServerPort>0</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
-          <IISUrl>http://localhost:50449/</IISUrl>
+          <IISUrl>http://localhost:54088/</IISUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
           <UseCustomServer>False</UseCustomServer>
           <CustomServerUrl>
