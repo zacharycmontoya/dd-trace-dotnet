@@ -123,6 +123,27 @@ namespace Datadog.Trace
         public static Tracer Instance { get; set; }
 
         /// <summary>
+        /// Gets a value indicating whether Datadog's profiler is attached to the current process.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if the profiler is currently attached; <c>false</c> otherwise.
+        /// </value>
+        public static bool ProfilerAttached
+        {
+            get
+            {
+                try
+                {
+                    return NativeMethods.IsProfilerAttached();
+                }
+                catch (DllNotFoundException)
+                {
+                    return false;
+                }
+            }
+        }
+
+        /// <summary>
         /// Gets the active scope
         /// </summary>
         public Scope ActiveScope => _scopeManager.Active;

@@ -18,13 +18,14 @@ namespace Datadog.Trace.ClrProfiler
         /// <value>
         ///   <c>true</c> if the profiler is currently attached; <c>false</c> otherwise.
         /// </value>
+        [Obsolete("Use Datadog.Tracer.Tracer.ProfilerAttached")]
         public static bool ProfilerAttached
         {
             get
             {
                 try
                 {
-                    return NativeMethods.IsProfilerAttached();
+                    return Tracer.ProfilerAttached;
                 }
                 catch (DllNotFoundException)
                 {

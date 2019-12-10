@@ -2,7 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 
 // ReSharper disable MemberHidesStaticFromOuterClass
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace
 {
     internal static class NativeMethods
     {
