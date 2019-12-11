@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <TargetFrameworks>netcoreapp2.1;netcoreapp3.0</TargetFrameworks>
     <ApiVersion Condition="'$(ApiVersion)' == ''">2.19.60</ApiVersion>
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
