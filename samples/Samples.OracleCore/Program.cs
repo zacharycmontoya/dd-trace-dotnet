@@ -1,0 +1,82 @@
+using System;
+using System.Data;
+using System.Data.Common;
+using System.Threading.Tasks;
+using Oracle.ManagedDataAccess.Client;
+using Samples.DatabaseHelper;
+
+namespace Samples.Oracle
+{
+    internal static class Program
+    {
+        private static async Task Main()
+        {
+            using (var connection = CreateConnection())
+            {
+                var testQueries = new RelationalDatabaseTestHarness<OracleConnection, OracleCommand, OracleDataReader>(
+                    connection,
+                    command => command.ExecuteNonQuery(),
+                    command => command.ExecuteScalar(),
+                    command => command.ExecuteReader(),
+                    (command, behavior) => command.ExecuteReader(behavior),
+                    command => command.ExecuteNonQueryAsync(),
+                    command => command.ExecuteScalarAsync(),
+                    executeReaderAsync: null,
+                    executeReaderWithBehaviorAsync: null
+                );
+
+
+                await testQueries.RunAsync();
+            }
+
+            using (var connection = CreateConnection())
+            {
+                var testQueries = new RelationalDatabaseTestHarness<DbConnection, DbCommand, DbDataReader>(
+                    connection,
+                    command => command.ExecuteNonQuery(),
+                    command => command.ExecuteScalar(),
+                    command => command.ExecuteReader(),
+                    (command, behavior) => command.ExecuteReader(behavior),
+                    command => command.ExecuteNonQueryAsync(),
+                    command => command.ExecuteScalarAsync(),
+                    command => command.ExecuteReaderAsync(),
+                    (command, behavior) => command.ExecuteReaderAsync(behavior)
+                );
+
+                await testQueries.RunAsync();
+            }
+
+            using (var connection = CreateConnection())
+            {
+                var testQueries = new RelationalDatabaseTestHarness<IDbConnection, IDbCommand, IDataReader>(
+                    connection,
+                    command => command.ExecuteNonQuery(),
+                    command => command.ExecuteScalar(),
+                    command => command.ExecuteReader(),
+                    (command, behavior) => command.ExecuteReader(behavior),
+                    executeNonQueryAsync: null,
+                    executeScalarAsync: null,
+                    executeReaderAsync: null,
+                    executeReaderWithBehaviorAsync: null
+                );
+
+                await testQueries.RunAsync();
+            }
+        }
+
+        private static OracleConnection CreateConnection()
+        {
+            var connectionString = Environment.GetEnvironmentVariable("ORACLE_CONNECTION_STRING");
+
+            if (connectionString == null)
+            {
+                var host = Environment.GetEnvironmentVariable("ORACLE_HOST") ?? "localhost";
+                var port = Environment.GetEnvironmentVariable("ORACLE_PORT") ?? "1521";
+                var service = Environment.GetEnvironmentVariable("ORACLE_SID") ?? "ORCLCDB";
+                connectionString = $"Data Source={host}:{port}/{service};User Id=oracle;password=oracle";
+            }
+
+            return new OracleConnection(connectionString);
+        }
+    }
+}
