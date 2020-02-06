@@ -40,13 +40,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             long moduleVersionPtr)
         {
             Func<IDbCommand, IDataReader> instrumentedMethod;
+            var instrumentedType = command.GetInstrumentedType(DbCommandTypeName);
 
             try
             {
                 instrumentedMethod =
                     MethodBuilder<Func<IDbCommand, IDataReader>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
-                       .WithTargetType(typeof(IDbCommand))
+                       .WithTargetType(instrumentedType)
                        .WithNamespaceAndNameFilters(DataReaderTypeName)
                        .Build();
             }
@@ -103,6 +104,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             long moduleVersionPtr)
         {
             Func<IDbCommand, CommandBehavior, IDataReader> instrumentedMethod;
+            var instrumentedType = command.GetInstrumentedType(DbCommandTypeName);
             var commandBehavior = (CommandBehavior)behavior;
 
             try
@@ -110,7 +112,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<IDbCommand, CommandBehavior, IDataReader>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
-                       .WithTargetType(typeof(IDbCommand))
+                       .WithTargetType(instrumentedType)
                        .WithParameters(commandBehavior)
                        .WithNamespaceAndNameFilters(DataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior)
                        .Build();
@@ -165,13 +167,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             long moduleVersionPtr)
         {
             Func<IDbCommand, int> instrumentedMethod;
+            var instrumentedType = command.GetInstrumentedType(DbCommandTypeName);
 
             try
             {
                 instrumentedMethod =
                     MethodBuilder<Func<IDbCommand, int>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteNonQuery)
-                       .WithTargetType(typeof(IDbCommand))
+                       .WithTargetType(instrumentedType)
                        .WithNamespaceAndNameFilters(ClrNames.Int32)
                        .Build();
             }
@@ -218,13 +221,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             long moduleVersionPtr)
         {
             Func<IDbCommand, object> instrumentedMethod;
+            var instrumentedType = command.GetInstrumentedType(DbCommandTypeName);
 
             try
             {
                 instrumentedMethod =
                     MethodBuilder<Func<IDbCommand, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalar)
-                       .WithTargetType(typeof(IDbCommand))
+                       .WithTargetType(instrumentedType)
                        .WithNamespaceAndNameFilters(ClrNames.Object)
                        .Build();
             }
