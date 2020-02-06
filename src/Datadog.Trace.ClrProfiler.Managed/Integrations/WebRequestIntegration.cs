@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 callGetResponse =
                     MethodBuilder<Func<object, WebResponse>>
                         .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                        .WithConcreteType(instrumentedType)
+                        .WithTargetType(instrumentedType)
                         .WithNamespaceAndNameFilters("System.Net.WebResponse")
                         .Build();
             }
@@ -137,7 +137,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 callGetResponseAsync =
                     MethodBuilder<Func<object, Task<WebResponse>>>
                         .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                        .WithConcreteType(instrumentedType)
+                        .WithTargetType(instrumentedType)
                         .WithNamespaceAndNameFilters(ClrNames.GenericTask)
                         .Build();
             }

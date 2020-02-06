@@ -74,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
                     MethodBuilder<Action<object>>
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(InvokePreStartInitMethods))
                        .WithParameters(methodInfoCollection)
-                       .WithConcreteType(concreteType)
+                       .WithTargetType(concreteType)
                        .Build();
             }
             catch (Exception ex)

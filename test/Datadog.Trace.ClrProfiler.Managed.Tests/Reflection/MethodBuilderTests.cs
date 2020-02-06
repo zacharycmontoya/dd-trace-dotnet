@@ -244,7 +244,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
             var methodResult = MethodBuilder<Action<object, object>> // Proper use should be Action<object, string>
                               .Start(_moduleVersionId, wrongMethod.MetadataToken, (int)OpCodeValue.Callvirt, "Method")
-                              .WithConcreteType(_testType)
+                              .WithTargetType(_testType)
                               .WithParameters(parameter) // The parameter is the saving grace
                               .Build();
 
@@ -256,7 +256,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         {
             return MethodBuilder<T>
                   .Start(_moduleVersionId, 0, (int)OpCodeValue.Callvirt, methodName)
-                  .WithConcreteType(overrideType ?? _testType);
+                  .WithTargetType(overrideType ?? _testType);
         }
     }
 }

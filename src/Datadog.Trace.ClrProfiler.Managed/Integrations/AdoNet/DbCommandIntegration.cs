@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, DbDataReader>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
-                       .WithConcreteType(typeof(DbCommand))
+                       .WithTargetType(typeof(DbCommand))
                        .WithNamespaceAndNameFilters(DbDataReaderTypeName)
                        .Build();
             }
@@ -114,7 +114,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CommandBehavior, DbDataReader>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
-                       .WithConcreteType(typeof(DbCommand))
+                       .WithTargetType(typeof(DbCommand))
                        .WithParameters(commandBehavior)
                        .WithNamespaceAndNameFilters(DbDataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior)
                        .Build();
@@ -199,7 +199,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CommandBehavior, CancellationToken, Task<DbDataReader>>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReaderAsync)
-                       .WithConcreteType(typeof(DbCommand))
+                       .WithTargetType(typeof(DbCommand))
                        .WithParameters(commandBehavior, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken)
                        .Build();
@@ -258,7 +258,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, int>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteNonQuery)
-                       .WithConcreteType(typeof(DbCommand))
+                       .WithTargetType(typeof(DbCommand))
                        .WithNamespaceAndNameFilters(ClrNames.Int32)
                        .Build();
             }
@@ -331,7 +331,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<int>>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteNonQueryAsync)
-                       .WithConcreteType(typeof(DbCommand))
+                       .WithTargetType(typeof(DbCommand))
                        .WithParameters(cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
                        .Build();
@@ -383,7 +383,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalar)
-                       .WithConcreteType(typeof(DbCommand))
+                       .WithTargetType(typeof(DbCommand))
                        .WithNamespaceAndNameFilters(ClrNames.Object)
                        .Build();
             }
@@ -456,7 +456,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<object>>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalarAsync)
-                       .WithConcreteType(typeof(DbCommand))
+                       .WithTargetType(typeof(DbCommand))
                        .WithParameters(cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
                        .Build();

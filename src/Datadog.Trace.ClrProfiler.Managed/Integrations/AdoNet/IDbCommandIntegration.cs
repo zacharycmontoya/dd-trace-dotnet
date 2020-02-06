@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<IDbCommand, IDataReader>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
-                       .WithConcreteType(typeof(IDbCommand))
+                       .WithTargetType(typeof(IDbCommand))
                        .WithNamespaceAndNameFilters(DataReaderTypeName)
                        .Build();
             }
@@ -110,7 +110,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<IDbCommand, CommandBehavior, IDataReader>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
-                       .WithConcreteType(typeof(IDbCommand))
+                       .WithTargetType(typeof(IDbCommand))
                        .WithParameters(commandBehavior)
                        .WithNamespaceAndNameFilters(DataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior)
                        .Build();
@@ -171,7 +171,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<IDbCommand, int>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteNonQuery)
-                       .WithConcreteType(typeof(IDbCommand))
+                       .WithTargetType(typeof(IDbCommand))
                        .WithNamespaceAndNameFilters(ClrNames.Int32)
                        .Build();
             }
@@ -224,7 +224,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<IDbCommand, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalar)
-                       .WithConcreteType(typeof(IDbCommand))
+                       .WithTargetType(typeof(IDbCommand))
                        .WithNamespaceAndNameFilters(ClrNames.Object)
                        .Build();
             }
