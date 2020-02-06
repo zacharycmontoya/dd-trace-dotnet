@@ -15,7 +15,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         public const string ElasticsearchMethodKey = "elasticsearch.method";
         public const string ElasticsearchUrlKey = "elasticsearch.url";
 
-        public static readonly Type CancellationTokenType = typeof(CancellationToken);
         public static readonly Type RequestPipelineType = Type.GetType("Elasticsearch.Net.IRequestPipeline, Elasticsearch.Net");
         public static readonly Type RequestDataType = Type.GetType("Elasticsearch.Net.RequestData, Elasticsearch.Net");
 
