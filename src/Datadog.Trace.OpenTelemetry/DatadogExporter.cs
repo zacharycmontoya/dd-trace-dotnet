@@ -23,8 +23,8 @@ namespace Datadog.Trace.OpenTelemetry
         /// using the global Tracer.
         /// </summary>
         public DatadogExporter()
+            : this(new DatadogExporterOptions())
         {
-            _tracer = Datadog.Trace.Tracer.Instance;
         }
 
         /// <summary>
@@ -33,7 +33,7 @@ namespace Datadog.Trace.OpenTelemetry
         /// <param name="options">Configuration options for this exporter.</param>
         public DatadogExporter(DatadogExporterOptions options)
         {
-            _tracer = options.Tracer;
+            _tracer = options.Tracer ?? Tracer.Instance;
         }
 
         /// <summary>Exports batch of spans asynchronously.</summary>
