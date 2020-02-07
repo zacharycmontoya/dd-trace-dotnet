@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Datadog.Trace.Abstractions;
 using Datadog.Trace.Containers;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
@@ -76,7 +77,7 @@ namespace Datadog.Trace.Agent
             _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
         }
 
-        public async Task SendTracesAsync(IList<List<Span>> traces)
+        public async Task SendTracesAsync(IList<List<ISpanData>> traces)
         {
             // retry up to 5 times with exponential back-off
             var retryLimit = 5;
@@ -92,7 +93,7 @@ namespace Datadog.Trace.Agent
                     var traceIds = GetUniqueTraceIds(traces);
 
                     // re-create content on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
-                    using (var content = new MsgPackContent<IList<List<Span>>>(traces, SerializationContext))
+                    using (var content = new MsgPackContent<IList<List<ISpanData>>>(traces, SerializationContext))
                     {
                         content.Headers.Add(AgentHttpHeaderNames.TraceCount, traceIds.Count.ToString());
 
@@ -166,7 +167,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private static HashSet<ulong> GetUniqueTraceIds(IList<List<Span>> traces)
+        private static HashSet<ulong> GetUniqueTraceIds(IList<List<ISpanData>> traces)
         {
             var uniqueTraceIds = new HashSet<ulong>();
 

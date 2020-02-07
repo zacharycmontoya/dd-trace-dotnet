@@ -1,24 +1,25 @@
 using System;
+using Datadog.Trace.Abstractions;
 using Datadog.Trace.ExtensionMethods;
 using MsgPack;
 using MsgPack.Serialization;
 
 namespace Datadog.Trace.Agent
 {
-    internal class SpanMessagePackSerializer : MessagePackSerializer<Span>
+    internal class SpanMessagePackSerializer : MessagePackSerializer<ISpanData>
     {
         public SpanMessagePackSerializer(SerializationContext context)
             : base(context)
         {
         }
 
-        protected override void PackToCore(Packer packer, Span value)
+        protected override void PackToCore(Packer packer, ISpanData value)
         {
             // First, pack array length (or map length).
             // It should be the number of members of the object to be serialized.
             var len = 8;
 
-            if (value.Context.ParentId != null)
+            if (value.ParentId != 0)
             {
                 len++;
             }
@@ -40,9 +41,9 @@ namespace Datadog.Trace.Agent
 
             packer.PackMapHeader(len);
             packer.PackString("trace_id");
-            packer.Pack(value.Context.TraceId);
+            packer.Pack(value.TraceId);
             packer.PackString("span_id");
-            packer.Pack(value.Context.SpanId);
+            packer.Pack(value.SpanId);
             packer.PackString("name");
             packer.PackString(value.OperationName);
             packer.PackString("resource");
@@ -55,10 +56,11 @@ namespace Datadog.Trace.Agent
             packer.Pack(value.StartTime.ToUnixTimeNanoseconds());
             packer.PackString("duration");
             packer.Pack(value.Duration.ToNanoseconds());
-            if (value.Context.ParentId != null)
+
+            if (value.ParentId != 0)
             {
                 packer.PackString("parent_id");
-                packer.Pack(value.Context.ParentId);
+                packer.Pack(value.ParentId);
             }
 
             if (value.Error)
@@ -80,7 +82,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        protected override Span UnpackFromCore(Unpacker unpacker)
+        protected override ISpanData UnpackFromCore(Unpacker unpacker)
         {
             throw new NotImplementedException();
         }

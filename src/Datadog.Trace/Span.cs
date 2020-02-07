@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using Datadog.Trace.Abstractions;
@@ -15,18 +16,22 @@ namespace Datadog.Trace
     /// tracks the duration of an operation as well as associated metadata in
     /// the form of a resource name, a service name, and user defined tags.
     /// </summary>
-    public class Span : IDisposable, ISpan
+    public class Span : IDisposable, ISpan, ISpanData
     {
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Span>();
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
         private readonly object _lock = new object();
+        private readonly DateTimeOffset _startTime;
+        private readonly ConcurrentDictionary<string, string> _tags = new ConcurrentDictionary<string, string>();
+        private readonly ConcurrentDictionary<string, double> _metrics = new ConcurrentDictionary<string, double>();
+        private TimeSpan _duration;
 
         internal Span(SpanContext context, DateTimeOffset? start)
         {
             Context = context;
             ServiceName = context.ServiceName;
-            StartTime = start ?? Context.TraceContext.UtcNow;
+            _startTime = start ?? Context.TraceContext.UtcNow;
 
             Log.Debug(
                 "Span started: [s_id: {0}, p_id: {1}, t_id: {2}]",
@@ -76,15 +81,17 @@ namespace Datadog.Trace
         /// </summary>
         public ulong SpanId => Context.SpanId;
 
+        ulong ISpanData.ParentId => Context.ParentId ?? 0;
+
         internal SpanContext Context { get; }
 
-        internal DateTimeOffset StartTime { get; }
+        DateTimeOffset ISpanData.StartTime => _startTime;
 
-        internal TimeSpan Duration { get; private set; }
+        TimeSpan ISpanData.Duration => _duration;
 
-        internal ConcurrentDictionary<string, string> Tags { get; } = new ConcurrentDictionary<string, string>();
+        IDictionary<string, string> ISpanData.Tags => _tags;
 
-        internal ConcurrentDictionary<string, double> Metrics { get; } = new ConcurrentDictionary<string, double>();
+        IDictionary<string, double> ISpanData.Metrics => _metrics;
 
         internal bool IsFinished { get; private set; }
 
@@ -106,14 +113,14 @@ namespace Datadog.Trace
             sb.AppendLine($"OperationName: {OperationName}");
             sb.AppendLine($"Resource: {ResourceName}");
             sb.AppendLine($"Type: {Type}");
-            sb.AppendLine($"Start: {StartTime}");
-            sb.AppendLine($"Duration: {Duration}");
+            sb.AppendLine($"Start: {_startTime}");
+            sb.AppendLine($"Duration: {_duration}");
             sb.AppendLine($"Error: {Error}");
             sb.AppendLine("Meta:");
 
-            if (Tags != null)
+            if (_tags != null)
             {
-                foreach (var kv in Tags)
+                foreach (var kv in _tags)
                 {
                     sb.Append($"\t{kv.Key}:{kv.Value}");
                 }
@@ -121,9 +128,9 @@ namespace Datadog.Trace
 
             sb.AppendLine("Metrics:");
 
-            if (Metrics != null && Metrics.Count > 0)
+            if (_metrics != null)
             {
-                foreach (var kv in Metrics)
+                foreach (var kv in _metrics)
                 {
                     sb.Append($"\t{kv.Key}:{kv.Value}");
                 }
@@ -150,7 +157,7 @@ namespace Datadog.Trace
             {
                 // Agent doesn't accept null tag values,
                 // remove them instead
-                Tags.TryRemove(key, out _);
+                _tags.TryRemove(key, out _);
                 return this;
             }
 
@@ -220,7 +227,7 @@ namespace Datadog.Trace
                     break;
                 default:
                     // if not a special tag, just add it to the tag bag
-                    Tags[key] = value;
+                    _tags[key] = value;
                     break;
             }
 
@@ -255,13 +262,14 @@ namespace Datadog.Trace
             var shouldCloseSpan = false;
             lock (_lock)
             {
-                ResourceName = ResourceName ?? OperationName;
+                ResourceName ??= OperationName;
+
                 if (!IsFinished)
                 {
-                    Duration = finishTimestamp - StartTime;
-                    if (Duration < TimeSpan.Zero)
+                    _duration = finishTimestamp - _startTime;
+                    if (_duration < TimeSpan.Zero)
                     {
-                        Duration = TimeSpan.Zero;
+                        _duration = TimeSpan.Zero;
                     }
 
                     IsFinished = true;
@@ -283,7 +291,7 @@ namespace Datadog.Trace
                         ServiceName,
                         ResourceName,
                         OperationName,
-                        string.Join(",", Tags.Keys));
+                        string.Join(",", _tags.Keys));
                 }
             }
         }
@@ -327,7 +335,7 @@ namespace Datadog.Trace
         /// <param name="key">The tag's key</param>
         /// <returns> The value for the tag with the key specified, or null if the tag does not exist</returns>
         public string GetTag(string key)
-            => Tags.TryGetValue(key, out var value)
+            => _tags.TryGetValue(key, out var value)
                    ? value
                    : null;
 
@@ -339,7 +347,7 @@ namespace Datadog.Trace
 
         internal double? GetMetric(string key)
         {
-            return Metrics.TryGetValue(key, out double value)
+            return _metrics.TryGetValue(key, out double value)
                        ? value
                        : default;
         }
@@ -348,11 +356,11 @@ namespace Datadog.Trace
         {
             if (value == null)
             {
-                Metrics.TryRemove(key, out _);
+                _metrics.TryRemove(key, out _);
             }
             else
             {
-                Metrics[key] = value.Value;
+                _metrics[key] = value.Value;
             }
 
             return this;

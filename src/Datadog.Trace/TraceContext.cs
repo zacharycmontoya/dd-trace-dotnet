@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Datadog.Trace.Abstractions;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
@@ -13,7 +14,7 @@ namespace Datadog.Trace
         private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
         private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
 
-        private List<Span> _spans = new List<Span>();
+        private List<ISpanData> _spans = new List<ISpanData>();
         private int _openSpans;
         private SamplingPriority? _samplingPriority;
         private bool _samplingPriorityLocked;
@@ -96,7 +97,7 @@ namespace Datadog.Trace
                 }
             }
 
-            List<Span> spansToWrite = null;
+            List<ISpanData> spansToWrite = null;
 
             lock (_lock)
             {
@@ -105,7 +106,7 @@ namespace Datadog.Trace
                 if (_openSpans == 0)
                 {
                     spansToWrite = _spans;
-                    _spans = new List<Span>();
+                    _spans = new List<ISpanData>();
                 }
             }
 

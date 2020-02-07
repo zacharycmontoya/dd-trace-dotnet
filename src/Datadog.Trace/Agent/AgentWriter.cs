@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.Abstractions;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -14,7 +15,7 @@ namespace Datadog.Trace.Agent
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<AgentWriter>();
 
-        private readonly AgentWriterBuffer<List<Span>> _tracesBuffer = new AgentWriterBuffer<List<Span>>(TraceBufferSize);
+        private readonly AgentWriterBuffer<List<ISpanData>> _tracesBuffer = new AgentWriterBuffer<List<ISpanData>>(TraceBufferSize);
         private readonly IApi _api;
         private readonly IStatsd _statsd;
         private readonly Task _flushTask;
@@ -27,7 +28,7 @@ namespace Datadog.Trace.Agent
             _flushTask = Task.Run(FlushTracesTaskLoopAsync);
         }
 
-        public void WriteTrace(List<Span> trace)
+        public void WriteTrace(List<ISpanData> trace)
         {
             var success = _tracesBuffer.Push(trace);
 

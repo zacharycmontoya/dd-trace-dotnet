@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Abstractions;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
@@ -323,7 +324,7 @@ namespace Datadog.Trace
         /// Writes the specified <see cref="Span"/> collection to the agent writer.
         /// </summary>
         /// <param name="trace">The <see cref="Span"/> collection to write.</param>
-        void IDatadogTracer.Write(List<Span> trace)
+        void IDatadogTracer.Write(List<ISpanData> trace)
         {
             _agentWriter.WriteTrace(trace);
         }
