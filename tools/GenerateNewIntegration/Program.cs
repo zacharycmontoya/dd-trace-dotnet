@@ -73,31 +73,11 @@ public static {1} {2}({3}
             // Create a root command with some options
             var rootCommand = new RootCommand("Generates files needed for automatic instrumentation");
 
-            var addFileSubcommand = new Command("add-file")
-            {
-                new Argument<string>("filepath")
-            };
-            addFileSubcommand.Handler = CommandHandler.Create<string>((filepath) => AddFile(filepath));
-            rootCommand.Add(addFileSubcommand);
-
             CommandDefinitions.AddMethod.Handler = CommandHandler.Create((InterceptMethodAttribute interceptMethodAttribute, string overrideMethodName) => AddMethod(interceptMethodAttribute, overrideMethodName));
             rootCommand.Add(CommandDefinitions.AddMethod);
 
             // Parse the incoming args and invoke the handler
             return rootCommand.InvokeAsync(args).Result;
-        }
-
-        private static void AddFile(string filepath)
-        {
-            Console.WriteLine("Thanks for the filepath argument, it is: " + filepath.ToString());
-
-            if (!Path.IsPathFullyQualified(filepath))
-            {
-                var integrationsFolder = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "src", "Datadog.Trace.ClrProfiler.Managed", "Integrations");
-                filepath = Path.Combine(integrationsFolder, filepath);
-            }
-
-            Console.WriteLine("Final filepath argument: " + filepath.ToString());
         }
 
         private static void AddMethod(InterceptMethodAttribute interceptMethodAttribute, string overrideMethodName)
