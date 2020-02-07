@@ -23,7 +23,7 @@ public static {1} {2}({3}
     int mdToken,
     long moduleVersionPtr)
 {{
-    const string methodName = ""{4}"");
+    const string methodName = ""{4}"";
     Type instanceType = {5};
     Type instrumentedType = {6};
     {7} instrumentedMethod;
