@@ -289,41 +289,41 @@ public static {1} {2}({3}
             return string.Format(MethodTemplate, stringFormatArgs.ToArray());
         }
 
-        private static string WrapInQuotes(string s)
-        {
-            return "\"" + s + "\"";
-        }
+        private static string WrapInQuotes(string s) => "\"" + s + "\"";
 
-        private static string StripGenerics(string s)
-        {
-            return s.Contains('<') ? s.Substring(0, s.IndexOf('<')) : s;
-        }
+        private static string StripGenerics(string s) =>
+            s.Contains('<') switch
+            {
+                true => s.Substring(0, s.IndexOf('<')),
+                false => s
+            };
 
-        private static string InterpretSignatureType(string s) => s switch
-        {
-            "System.Void" => "void",
-            "System.Boolean" => "bool",
+        private static string InterpretSignatureType(string s) =>
+            s switch
+            {
+                "System.Void" => "void",
+                "System.Boolean" => "bool",
 
-            "System.Byte" => "byte",
-            "System.SByte" => "sbyte",
-            "System.Char" => "char",
+                "System.Byte" => "byte",
+                "System.SByte" => "sbyte",
+                "System.Char" => "char",
 
-            "System.Decimal" => "decimal",
-            "System.Double" => "double",
-            "System.Single" => "float",
+                "System.Decimal" => "decimal",
+                "System.Double" => "double",
+                "System.Single" => "float",
 
-            "System.Int16" => "short",
-            "System.UInt16" => "ushort",
+                "System.Int16" => "short",
+                "System.UInt16" => "ushort",
 
-            "System.Int32" => "int",
-            "System.UInt32" => "uint",
+                "System.Int32" => "int",
+                "System.UInt32" => "uint",
 
-            "System.Int64" => "long",
-            "System.UInt64" => "ulong",
+                "System.Int64" => "long",
+                "System.UInt64" => "ulong",
 
-            "System.String" => "string",
+                "System.String" => "string",
 
-            _ => "object",
-        };
+                _ => "object",
+            };
     }
 }
