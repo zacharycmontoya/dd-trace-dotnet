@@ -19,12 +19,21 @@ namespace Datadog.Trace.OpenTelemetry
         private readonly IDatadogTracer _tracer;
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="DatadogExporter"/> class
+        /// using the global Tracer.
+        /// </summary>
+        public DatadogExporter()
+        {
+            _tracer = Datadog.Trace.Tracer.Instance;
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="DatadogExporter"/> class.
         /// </summary>
-        /// <param name="tracer">The <see cref="Tracer"/> instance to use to send spans to Datadog.</param>
-        public DatadogExporter(Tracer tracer)
+        /// <param name="options">Configuration options for this exporter.</param>
+        public DatadogExporter(DatadogExporterOptions options)
         {
-            _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
+            _tracer = options.Tracer;
         }
 
         /// <summary>Exports batch of spans asynchronously.</summary>
