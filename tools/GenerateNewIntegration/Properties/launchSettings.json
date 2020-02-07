@@ -2,7 +2,7 @@
   "profiles": {
     "GenerateNewIntegration": {
       "commandName": "Project",
-      "commandLineArgs": "add-method --target-assembly GraphQL --target-type GraphQL.Validation.IDocumentValidator --target-method Validate --target-minimum-version 2.3 --target-maximum-version 2 --target-signature-types GraphQL.Validation.IValidationResult System.String GraphQL.Types.ISchema GraphQL.Language.AST.Document System.Collections.Generic.IEnumerable`1^<GraphQL.Validation.IValidationRule^> _ GraphQL.Inputs --target-method-is-static false"
+      "commandLineArgs": "add-method --target-assemblies System.Data System.Data.Common --target-type System.Data.Common.DbCommand --target-method ExecuteNonQuery --target-minimum-version 4 --target-maximum-version 4 --target-signature-types System.Int32 --target-method-is-static false"
     }
   }
 }

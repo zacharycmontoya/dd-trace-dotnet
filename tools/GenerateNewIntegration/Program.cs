@@ -13,25 +13,29 @@ namespace GenerateNewIntegration
     public class Program
     {
         private const string MethodTemplate =
-@"
+@"/// <summary>
+/// TODO: Update the type parameters AND ESPECIALLY THE RETURN TYPE if the types are CLR primitives.
+/// </summary>
 [InterceptMethod(
 {0})]
-public static object {1}({2}
+public static {1} {2}({3}
     int opCode,
     int mdToken,
     long moduleVersionPtr)
 {{
-    const string methodName = nameof({1});
-    Type instanceType = {3};
-    Type instrumentedType = {4};
+    const string methodName = ""{2}"");
+    Type instanceType = {4};
+    Type instrumentedType = {5};
+    {6} instrumentedMethod;
 
+    // Use the MethodBuilder to construct a delegate to the original method call
     try
     {{
-        originalMethodCall =
-            MethodBuilder<Func<object, object, CancellationToken, object>>
+        instrumentedMethod =
+            MethodBuilder<{6}>
                 .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                .WithTargetType(wireProtocolType)
-                .WithParameters(connection, cancellationToken)
+                .WithTargetType(instrumentedType)
+                .WithNamespaceAndNameFilters({7}) // Needed for the fallback logic if target method name is overloaded
                 .Build();
     }}
     catch (Exception ex)
@@ -43,15 +47,16 @@ public static object {1}({2}
             moduleVersionPointer: moduleVersionPtr,
             methodName: methodName,
             instanceType: instanceType?.AssemblyQualifiedName,
-            instrumentedType: {5});
+            instrumentedType: {8});
         throw;
     }}
 
-    using (var scope = CreateScope({6}))
+    // Open a scope, decorate the span, and call the original method
+    using (Scope scope = CreateScope({9}))
     {{
         try
         {{
-            return originalMethodCall(null);
+            return instrumentedMethod({9});
         }}
         catch (Exception ex)
         {{
@@ -117,9 +122,15 @@ public static object {1}({2}
                 },
                 new Option(
                     "--target-assembly",
-                    "The name of the containing assembly")
+                    "The name of the assembly that contains the target method to be intercepted. Required if TargetAssemblies is not set")
                 {
                     Argument = new Argument<string>(),
+                },
+                new Option(
+                    "--target-assemblies",
+                    "The name of the assemblies that contain the target method to be intercepted. Required if TargetAssembly is not set")
+                {
+                    Argument = new Argument<string[]>(),
                     Required = true
                 },
                 new Option(
@@ -194,11 +205,7 @@ public static object {1}({2}
 
         private static void AddMethod(InterceptMethodAttribute interceptMethodAttribute)
         {
-            Console.WriteLine("TargetSignatureTypes before correction: " + string.Join(',', interceptMethodAttribute.TargetSignatureTypes));
-            Console.WriteLine();
             CorrectGenericSymbols(interceptMethodAttribute);
-            Console.WriteLine("TargetSignatureTypes after correction: " + string.Join(',', interceptMethodAttribute.TargetSignatureTypes));
-
             Console.WriteLine(GenerateMethod(interceptMethodAttribute));
         }
 
@@ -211,6 +218,12 @@ public static object {1}({2}
 
         private static string GenerateMethod(InterceptMethodAttribute interceptMethodAttribute)
         {
+            var stringFormatArgs = new List<object>();
+
+            // Helper variables
+            var interpretedVariableTypesOfTargetSignatureTypes = interceptMethodAttribute.TargetSignatureTypes.Select(InterpretSignatureType);
+
+            // {0} = InterceptMethodAttribute
             var interceptMethodContentsSb = new StringBuilder();
             var indentation = "    ";
             var lineBreakAndIndentation = "\r\n" + indentation;
@@ -220,23 +233,36 @@ public static object {1}({2}
             }
             else
             {
-                // interceptMethodContentsSb.AppendLine($"{indentation}TargetAssembly = {WrapInQuotes(interceptMethodAttribute.TargetAssembly)},");
+                interceptMethodContentsSb.AppendLine($"{indentation}TargetAssemblies = new[] {{ {string.Join(", ", interceptMethodAttribute.TargetAssemblies.Select(WrapInQuotes))} }},");
             }
 
             interceptMethodContentsSb.AppendLine($"{indentation}TargetType = {WrapInQuotes(interceptMethodAttribute.TargetType)},");
+            interceptMethodContentsSb.AppendLine($"{indentation}TargetMethod = {WrapInQuotes(interceptMethodAttribute.TargetMethod)},");
             interceptMethodContentsSb.AppendLine($"{indentation}TargetSignatureTypes = new[] {{ {string.Join(", ", interceptMethodAttribute.TargetSignatureTypes.Select(WrapInQuotes))} }},");
             interceptMethodContentsSb.AppendLine($"{indentation}TargetMinimumVersion = {WrapInQuotes(interceptMethodAttribute.TargetMinimumVersion)},");
             interceptMethodContentsSb.Append($"{indentation}TargetMaximumVersion = {WrapInQuotes(interceptMethodAttribute.TargetMaximumVersion)}");
+            var interceptMethodContents = interceptMethodContentsSb.ToString();
+            stringFormatArgs.Add(interceptMethodContents);
 
+            // {1} = return type
+            var returnTypeString = interpretedVariableTypesOfTargetSignatureTypes.First();
+            stringFormatArgs.Add(returnTypeString);
+
+            // {2} = MethodName
+            var methodName = interceptMethodAttribute.TargetMethod;
+            stringFormatArgs.Add(methodName);
+
+            // {3} = comma-separated method parameter list
             var parameterList = new List<string>();
-            if (interceptMethodAttribute.TargetSignatureTypes.Length > 1)
+            var signatureTypeLength = interceptMethodAttribute.TargetSignatureTypes.Length;
+            if (!interceptMethodAttribute.TargetMethodIsStatic)
             {
-                if (!interceptMethodAttribute.TargetMethodIsStatic)
-                {
-                    parameterList.Add("instanceObject");
-                }
+                parameterList.Add("instanceObject");
+            }
 
-                for (int i = 1; i < interceptMethodAttribute.TargetSignatureTypes.Length; i++)
+            if (signatureTypeLength > 1)
+            {
+                for (int i = 1; i < signatureTypeLength; i++)
                 {
                     parameterList.Add($"arg{i}");
                 }
@@ -244,29 +270,80 @@ public static object {1}({2}
 
             var initialObjectType = parameterList.Any() ? "object " : string.Empty;
 
-            var interceptMethodContents = interceptMethodContentsSb.ToString();
             var methodSignatureParameters = initialObjectType + string.Join($",{lineBreakAndIndentation}object ", parameterList);
             methodSignatureParameters = string.IsNullOrWhiteSpace(methodSignatureParameters) ? string.Empty : lineBreakAndIndentation + methodSignatureParameters + ",";
-            var instanceTypeExpression = interceptMethodAttribute.TargetMethodIsStatic ? null : "instanceObject.GetType()";
-            var instrumentedTypeExpression = interceptMethodAttribute.TargetMethodIsStatic ? null : $"instanceObject.GetInstrumentedType({WrapInQuotes(interceptMethodAttribute.TargetType)})";
-            var instrumentedTypeName = WrapInQuotes(interceptMethodAttribute.TargetType);
-            var createScopeParameters = string.Join($", ", parameterList);
+            stringFormatArgs.Add(methodSignatureParameters);
 
-            return string.Format(
-                MethodTemplate,
-                interceptMethodContents,
-                interceptMethodAttribute.TargetMethod,
-                methodSignatureParameters,
-                instanceTypeExpression,
-                instrumentedTypeExpression,
-                instrumentedTypeName,
-                createScopeParameters);
+            // {4} = instanceType assignment
+            var instanceTypeExpression = interceptMethodAttribute.TargetMethodIsStatic ? null : "instanceObject.GetType()";
+            stringFormatArgs.Add(instanceTypeExpression);
+
+            // {5} = instrumentedType assignment
+            var instrumentedTypeExpression = interceptMethodAttribute.TargetMethodIsStatic ? null : $"instanceObject.GetInstrumentedType({WrapInQuotes(interceptMethodAttribute.TargetType)})";
+            stringFormatArgs.Add(instrumentedTypeExpression);
+
+            // {6} = instrumentedMethod delegate type
+            var typeListForDelegateType = new List<string>();
+            if (!interceptMethodAttribute.TargetMethodIsStatic)
+            {
+                typeListForDelegateType.Add("object");
+            }
+
+            var instrumentedMethodDelegateType = $"Func<{string.Join(", ", typeListForDelegateType.Concat(interpretedVariableTypesOfTargetSignatureTypes.Skip(1)).Concat(interpretedVariableTypesOfTargetSignatureTypes.Take(1)))}>";
+            stringFormatArgs.Add(instrumentedMethodDelegateType);
+
+            // {7} = WithNamespaceAndNameFilters params
+            var withNamespaceAndNameFiltersArray = string.Join(", ", interceptMethodAttribute.TargetSignatureTypes.Select(s => WrapInQuotes(StripGenerics(s))));
+            stringFormatArgs.Add(withNamespaceAndNameFiltersArray);
+
+            // {8} = the TargetType, being passed to the Logging method
+            var instrumentedTypeName = WrapInQuotes(interceptMethodAttribute.TargetType);
+            stringFormatArgs.Add(instrumentedTypeName);
+
+            // {9} = CreateScope params
+            var createScopeParameters = string.Join($", ", parameterList);
+            stringFormatArgs.Add(createScopeParameters);
+
+            // Format the template and return the result
+            return string.Format(MethodTemplate, stringFormatArgs.ToArray());
         }
 
         private static string WrapInQuotes(string s)
         {
             return "\"" + s + "\"";
         }
+
+        private static string StripGenerics(string s)
+        {
+            return s.Contains('<') ? s.Substring(0, s.IndexOf('<')) : s;
+        }
+
+        private static string InterpretSignatureType(string s) => s switch
+        {
+            "System.Void" => "void",
+            "System.Boolean" => "bool",
+
+            "System.Byte" => "byte",
+            "System.SByte" => "sbyte",
+            "System.Char" => "char",
+
+            "System.Decimal" => "decimal",
+            "System.Double" => "double",
+            "System.Single" => "float",
+
+            "System.Int16" => "short",
+            "System.UInt16" => "ushort",
+
+            "System.Int32" => "int",
+            "System.UInt32" => "uint",
+
+            "System.Int64" => "long",
+            "System.UInt64" => "ulong",
+
+            "System.String" => "string",
+
+            _ => "object",
+        };
 
         /*
                 public static int Main(string[] args)
