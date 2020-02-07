@@ -4,7 +4,7 @@ using Datadog.Trace.Abstractions;
 
 namespace Datadog.Trace
 {
-    internal class SpanData : ISpanData
+    public class SpanData : ISpanData
     {
         public ulong TraceId { get; set; }
 
@@ -29,5 +29,30 @@ namespace Datadog.Trace
         public IDictionary<string, string> Tags { get; set; }
 
         public IDictionary<string, double> Metrics { get; set; }
+
+        /// <summary>Initializes a new instance of the <see cref="SpanData"></see> class.</summary>
+        public SpanData()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SpanData"></see> class
+        /// by copying values from the specified <see cref="ISpanData"/>.
+        /// </summary>
+        public SpanData(ISpanData span)
+        {
+            TraceId = span.TraceId;
+            SpanId = span.SpanId;
+            ParentId = span.ParentId;
+            StartTime = span.StartTime;
+            Duration = span.Duration;
+            OperationName = span.OperationName;
+            ServiceName = span.ServiceName;
+            ResourceName = span.ResourceName;
+            Type = span.Type;
+            Error = span.Error;
+            Tags = span.Tags;
+            Metrics = span.Metrics;
+        }
     }
 }

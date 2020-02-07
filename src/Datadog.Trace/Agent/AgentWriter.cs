@@ -15,7 +15,7 @@ namespace Datadog.Trace.Agent
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<AgentWriter>();
 
-        private readonly AgentWriterBuffer<List<ISpanData>> _tracesBuffer = new AgentWriterBuffer<List<ISpanData>>(TraceBufferSize);
+        private readonly AgentWriterBuffer<List<SpanData>> _tracesBuffer = new AgentWriterBuffer<List<SpanData>>(TraceBufferSize);
         private readonly IApi _api;
         private readonly IStatsd _statsd;
         private readonly Task _flushTask;
@@ -30,7 +30,8 @@ namespace Datadog.Trace.Agent
 
         public void WriteTrace(List<ISpanData> trace)
         {
-            var success = _tracesBuffer.Push(trace);
+            List<SpanData> spans = trace.Select(s => s is SpanData spanData ? spanData : new SpanData(s)).ToList();
+            var success = _tracesBuffer.Push(spans);
 
             if (!success)
             {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.Abstractions
 {
-    internal interface ISpanData
+    public interface ISpanData
     {
         ulong TraceId { get; }
 
