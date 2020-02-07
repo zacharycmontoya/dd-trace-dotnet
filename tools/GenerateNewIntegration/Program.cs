@@ -16,22 +16,49 @@ namespace GenerateNewIntegration
 @"
 [InterceptMethod(
 {0})]
-public static object {1}(
-{2}{3}
+public static object {1}({2}
     int opCode,
     int mdToken,
     long moduleVersionPtr)
 {{
-    using (var scope = CreateScope({2}))
+    const string methodName = nameof({1});
+    Type instanceType = {3};
+    Type instrumentedType = {4};
+
+    try
+    {{
+        originalMethodCall =
+            MethodBuilder<Func<object, object, CancellationToken, object>>
+                .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                .WithTargetType(wireProtocolType)
+                .WithParameters(connection, cancellationToken)
+                .Build();
+    }}
+    catch (Exception ex)
+    {{
+        Log.ErrorRetrievingMethod(
+            exception: ex,
+            opCode: opCode,
+            mdToken: mdToken,
+            moduleVersionPointer: moduleVersionPtr,
+            methodName: methodName,
+            instanceType: instanceType?.AssemblyQualifiedName,
+            instrumentedType: {5});
+        throw;
+    }}
+
+    using (var scope = CreateScope({6}))
     {{
         try
         {{
+            return originalMethodCall(null);
         }}
         catch (Exception ex)
         {{
             scope?.Span.SetException(ex);
             throw;
         }}
+    }}
 }}";
 
         private static StringBuilder sb = new StringBuilder();
@@ -206,26 +233,33 @@ public static object {1}(
             {
                 if (!interceptMethodAttribute.TargetMethodIsStatic)
                 {
-                    parameterList.Add("object instanceObject");
+                    parameterList.Add("instanceObject");
                 }
 
                 for (int i = 1; i < interceptMethodAttribute.TargetSignatureTypes.Length; i++)
                 {
-                    parameterList.Add($"object arg{i}");
+                    parameterList.Add($"arg{i}");
                 }
             }
 
+            var initialObjectType = parameterList.Any() ? "object " : string.Empty;
+
             var interceptMethodContents = interceptMethodContentsSb.ToString();
-            var methodSignatureParameters = indentation + string.Join($",{lineBreakAndIndentation}", parameterList);
-            var methodSignatureComma = string.IsNullOrWhiteSpace(methodSignatureParameters) ? string.Empty : ",";
-            var createScopeParameters = string.Join($",{lineBreakAndIndentation}", parameterList);
+            var methodSignatureParameters = initialObjectType + string.Join($",{lineBreakAndIndentation}object ", parameterList);
+            methodSignatureParameters = string.IsNullOrWhiteSpace(methodSignatureParameters) ? string.Empty : lineBreakAndIndentation + methodSignatureParameters + ",";
+            var instanceTypeExpression = interceptMethodAttribute.TargetMethodIsStatic ? null : "instanceObject.GetType()";
+            var instrumentedTypeExpression = interceptMethodAttribute.TargetMethodIsStatic ? null : $"instanceObject.GetInstrumentedType({WrapInQuotes(interceptMethodAttribute.TargetType)})";
+            var instrumentedTypeName = WrapInQuotes(interceptMethodAttribute.TargetType);
+            var createScopeParameters = string.Join($", ", parameterList);
 
             return string.Format(
                 MethodTemplate,
                 interceptMethodContents,
                 interceptMethodAttribute.TargetMethod,
                 methodSignatureParameters,
-                methodSignatureComma,
+                instanceTypeExpression,
+                instrumentedTypeExpression,
+                instrumentedTypeName,
                 createScopeParameters);
         }
 
