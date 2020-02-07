@@ -23,19 +23,19 @@ public static {1} {2}({3}
     int mdToken,
     long moduleVersionPtr)
 {{
-    const string methodName = ""{2}"");
-    Type instanceType = {4};
-    Type instrumentedType = {5};
-    {6} instrumentedMethod;
+    const string methodName = ""{4}"");
+    Type instanceType = {5};
+    Type instrumentedType = {6};
+    {7} instrumentedMethod;
 
     // Use the MethodBuilder to construct a delegate to the original method call
     try
     {{
         instrumentedMethod =
-            MethodBuilder<{6}>
+            MethodBuilder<{7}>
                 .Start(moduleVersionPtr, mdToken, opCode, methodName)
                 .WithTargetType(instrumentedType)
-                .WithNamespaceAndNameFilters({7}) // Needed for the fallback logic if target method name is overloaded
+                .WithNamespaceAndNameFilters({8}) // Needed for the fallback logic if target method name is overloaded
                 .Build();
     }}
     catch (Exception ex)
@@ -47,16 +47,16 @@ public static {1} {2}({3}
             moduleVersionPointer: moduleVersionPtr,
             methodName: methodName,
             instanceType: instanceType?.AssemblyQualifiedName,
-            instrumentedType: {8});
+            instrumentedType: {9});
         throw;
     }}
 
     // Open a scope, decorate the span, and call the original method
-    using (Scope scope = CreateScope({9}))
+    using (Scope scope = CreateScopeFrom{2}({10}))
     {{
         try
         {{
-            return instrumentedMethod({9});
+            return instrumentedMethod({10});
         }}
         catch (Exception ex)
         {{
@@ -71,27 +71,7 @@ public static {1} {2}({3}
         public static int Main(string[] args)
         {
             // Create a root command with some options
-            var rootCommand = new RootCommand("Generates files needed for automatic instrumentation")
-            {
-                new Option(
-                    "--int-option",
-                    "An option whose argument is parsed as an int")
-                {
-                    Argument = new Argument<int>(defaultValue: () => 42)
-                },
-                new Option(
-                    "--bool-option",
-                    "An option whose argument is parsed as a bool")
-                {
-                    Argument = new Argument<bool>()
-                },
-                new Option(
-                    "--file-option",
-                    "An option whose argument is parsed as a FileInfo")
-                {
-                    Argument = new Argument<FileInfo>()
-                }
-            };
+            var rootCommand = new RootCommand("Generates files needed for automatic instrumentation");
 
             var addFileSubcommand = new Command("add-file")
             {
@@ -102,6 +82,12 @@ public static {1} {2}({3}
 
             var addMethodSubcommand = new Command("add-method")
             {
+                new Option(
+                    "--override-method-name",
+                    "Override the generated method name. If undefined, the generated method name will match the name of the target method")
+                {
+                    Argument = new Argument<string>(),
+                },
                 new Option(
                     "--caller-assembly",
                     "The name of the assembly where calls to the target method are searched")
@@ -174,7 +160,7 @@ public static {1} {2}({3}
                     Required = true
                 }
             };
-            addMethodSubcommand.Handler = CommandHandler.Create((InterceptMethodAttribute interceptMethodAttribute) => AddMethod(interceptMethodAttribute));
+            addMethodSubcommand.Handler = CommandHandler.Create((InterceptMethodAttribute interceptMethodAttribute, string overrideMethodName) => AddMethod(interceptMethodAttribute, overrideMethodName));
             rootCommand.Add(addMethodSubcommand);
 
             /*
@@ -203,10 +189,10 @@ public static {1} {2}({3}
             Console.WriteLine("Final filepath argument: " + filepath.ToString());
         }
 
-        private static void AddMethod(InterceptMethodAttribute interceptMethodAttribute)
+        private static void AddMethod(InterceptMethodAttribute interceptMethodAttribute, string overrideMethodName)
         {
             CorrectGenericSymbols(interceptMethodAttribute);
-            Console.WriteLine(GenerateMethod(interceptMethodAttribute));
+            Console.WriteLine(GenerateMethod(interceptMethodAttribute, overrideMethodName));
         }
 
         private static void CorrectGenericSymbols(InterceptMethodAttribute interceptMethodAttribute)
@@ -216,7 +202,7 @@ public static {1} {2}({3}
             interceptMethodAttribute.TargetSignatureTypes = interceptMethodAttribute.TargetSignatureTypes?.Select(s => s.Replace("^", string.Empty)).ToArray();
         }
 
-        private static string GenerateMethod(InterceptMethodAttribute interceptMethodAttribute)
+        private static string GenerateMethod(InterceptMethodAttribute interceptMethodAttribute, string overrideMethodName)
         {
             var stringFormatArgs = new List<object>();
 
@@ -248,8 +234,8 @@ public static {1} {2}({3}
             var returnTypeString = interpretedVariableTypesOfTargetSignatureTypes.First();
             stringFormatArgs.Add(returnTypeString);
 
-            // {2} = MethodName
-            var methodName = interceptMethodAttribute.TargetMethod;
+            // {2} = name of autogenerated method, which defaults to TargetMethod
+            var methodName = overrideMethodName ?? interceptMethodAttribute.TargetMethod;
             stringFormatArgs.Add(methodName);
 
             // {3} = comma-separated method parameter list
@@ -274,15 +260,19 @@ public static {1} {2}({3}
             methodSignatureParameters = string.IsNullOrWhiteSpace(methodSignatureParameters) ? string.Empty : lineBreakAndIndentation + methodSignatureParameters + ",";
             stringFormatArgs.Add(methodSignatureParameters);
 
-            // {4} = instanceType assignment
+            // {4} = TargetMethod
+            var targetMethodName = interceptMethodAttribute.TargetMethod;
+            stringFormatArgs.Add(targetMethodName);
+
+            // {5} = instanceType assignment
             var instanceTypeExpression = interceptMethodAttribute.TargetMethodIsStatic ? null : "instanceObject.GetType()";
             stringFormatArgs.Add(instanceTypeExpression);
 
-            // {5} = instrumentedType assignment
+            // {6} = instrumentedType assignment
             var instrumentedTypeExpression = interceptMethodAttribute.TargetMethodIsStatic ? null : $"instanceObject.GetInstrumentedType({WrapInQuotes(interceptMethodAttribute.TargetType)})";
             stringFormatArgs.Add(instrumentedTypeExpression);
 
-            // {6} = instrumentedMethod delegate type
+            // {7} = instrumentedMethod delegate type
             var typeListForDelegateType = new List<string>();
             if (!interceptMethodAttribute.TargetMethodIsStatic)
             {
@@ -292,15 +282,15 @@ public static {1} {2}({3}
             var instrumentedMethodDelegateType = $"Func<{string.Join(", ", typeListForDelegateType.Concat(interpretedVariableTypesOfTargetSignatureTypes.Skip(1)).Concat(interpretedVariableTypesOfTargetSignatureTypes.Take(1)))}>";
             stringFormatArgs.Add(instrumentedMethodDelegateType);
 
-            // {7} = WithNamespaceAndNameFilters params
+            // {8} = WithNamespaceAndNameFilters params
             var withNamespaceAndNameFiltersArray = string.Join(", ", interceptMethodAttribute.TargetSignatureTypes.Select(s => WrapInQuotes(StripGenerics(s))));
             stringFormatArgs.Add(withNamespaceAndNameFiltersArray);
 
-            // {8} = the TargetType, being passed to the Logging method
+            // {9} = the TargetType, being passed to the Logging method
             var instrumentedTypeName = WrapInQuotes(interceptMethodAttribute.TargetType);
             stringFormatArgs.Add(instrumentedTypeName);
 
-            // {9} = CreateScope params
+            // {10} = CreateScope params
             var createScopeParameters = string.Join($", ", parameterList);
             stringFormatArgs.Add(createScopeParameters);
 
