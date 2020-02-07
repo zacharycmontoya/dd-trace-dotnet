@@ -155,6 +155,8 @@ namespace Datadog.Trace
         /// </summary>
         public TracerSettings Settings { get; }
 
+        IAgentWriter IDatadogTracer.AgentWriter => _agentWriter;
+
         /// <summary>
         /// Gets the tracer's scope manager, which determines which span is currently active, if any.
         /// </summary>

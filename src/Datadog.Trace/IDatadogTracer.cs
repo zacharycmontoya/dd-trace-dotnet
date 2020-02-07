@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Abstractions;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 
@@ -15,6 +16,8 @@ namespace Datadog.Trace
         ISampler Sampler { get; }
 
         TracerSettings Settings { get; }
+
+        IAgentWriter AgentWriter { get; }
 
         Span StartSpan(string operationName);
 
