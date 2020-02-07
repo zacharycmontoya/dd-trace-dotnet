@@ -81,17 +81,32 @@ namespace Datadog.Trace
         /// </summary>
         public ulong SpanId => Context.SpanId;
 
+        /// <summary>
+        /// Gets the span if of the parent span.
+        /// </summary>
         ulong ISpanData.ParentId => Context.ParentId ?? 0;
 
-        internal SpanContext Context { get; }
-
+        /// <summary>
+        /// Gets the span's start timestamp.
+        /// </summary>
         DateTimeOffset ISpanData.StartTime => _startTime;
 
+        /// <summary>
+        /// Gets the span's duration.
+        /// </summary>
         TimeSpan ISpanData.Duration => _duration;
 
+        /// <summary>
+        /// Gets the span's tags collection.
+        /// </summary>
         IDictionary<string, string> ISpanData.Tags => _tags;
 
+        /// <summary>
+        /// Gets the span's metrics collection.
+        /// </summary>
         IDictionary<string, double> ISpanData.Metrics => _metrics;
+
+        internal SpanContext Context { get; }
 
         internal bool IsFinished { get; private set; }
 

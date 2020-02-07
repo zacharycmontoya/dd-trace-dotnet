@@ -11,10 +11,17 @@ using OTSpanData = OpenTelemetry.Trace.Export.SpanData;
 
 namespace Datadog.Trace.OpenTelemetry
 {
+    /// <summary>
+    /// OpenTelemetry exported for Datadog
+    /// </summary>
     public sealed class DatadogExporter : SpanExporter
     {
         private readonly IDatadogTracer _tracer;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DatadogExporter"/> class.
+        /// </summary>
+        /// <param name="tracer">The <see cref="Tracer"/> instance to use to send spans to Datadog.</param>
         public DatadogExporter(Tracer tracer)
         {
             _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
@@ -24,8 +31,9 @@ namespace Datadog.Trace.OpenTelemetry
         /// <param name="batch">Batch of spans to export.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Result of export.</returns>
-        public override Task<ExportResult> ExportAsync(IEnumerable<OTSpanData> batch,
-                                                       CancellationToken cancellationToken)
+        public override Task<ExportResult> ExportAsync(
+            IEnumerable<OTSpanData> batch,
+            CancellationToken cancellationToken)
         {
             var spans = batch.Select(sd => (ISpanData)new SpanData
                                                       {
@@ -44,6 +52,16 @@ namespace Datadog.Trace.OpenTelemetry
             return Task.FromResult(ExportResult.Success);
         }
 
+        /// <summary>
+        /// Shuts down exporter asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public override Task ShutdownAsync(CancellationToken cancellationToken)
+        {
+            return _tracer.AgentWriter.FlushAndCloseAsync();
+        }
+
         private static ulong ToUInt64(ActivityTraceId activityTraceId)
         {
             var traceIdBytes = new byte[16];
@@ -56,13 +74,6 @@ namespace Datadog.Trace.OpenTelemetry
             var spanIdBytes = new byte[8];
             activitySpanId.CopyTo(spanIdBytes);
             return BitConverter.ToUInt64(spanIdBytes, 0);
-        }
-
-        /// <summary>Shuts down exporter asynchronously.</summary>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        public override Task ShutdownAsync(CancellationToken cancellationToken)
-        {
-            return _tracer.AgentWriter.FlushAndCloseAsync();
         }
     }
 }

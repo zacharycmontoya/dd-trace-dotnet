@@ -155,6 +155,9 @@ namespace Datadog.Trace
         /// </summary>
         public TracerSettings Settings { get; }
 
+        /// <summary>
+        /// Gets the AgentWriter used by this Tracer.
+        /// </summary>
         IAgentWriter IDatadogTracer.AgentWriter => _agentWriter;
 
         /// <summary>
