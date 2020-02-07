@@ -65,6 +65,12 @@ namespace Datadog.Trace.ClrProfiler
         public string TargetMethod { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the target method to be intercepted is static.
+        /// Required.
+        /// </summary>
+        public bool TargetMethodIsStatic { get; set; }
+
+        /// <summary>
         /// Gets or sets the method signature that is matched to the target method to be intercepted.
         /// If null, signature check is not done.
         /// </summary>
