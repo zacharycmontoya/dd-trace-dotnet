@@ -25,7 +25,7 @@ public static {1} {2}({3}
 {{
     const string methodName = ""{4}"";
     Type instanceType = {5};
-    Type instrumentedType = {6};
+    Type instrumentedType = {6}; // use GetInstrumentedType for base types or GetInstrumentedInterface for interfaces
     {7} instrumentedMethod;
 
     // Use the MethodBuilder to construct a delegate to the original method call
@@ -161,7 +161,7 @@ public static {1} {2}({3}
             stringFormatArgs.Add(instanceTypeExpression);
 
             // {6} = instrumentedType assignment
-            var instrumentedTypeExpression = interceptMethodAttribute.TargetMethodIsStatic ? null : $"instanceObject.GetInstrumentedType({WrapInQuotes(interceptMethodAttribute.TargetType)})";
+            var instrumentedTypeExpression = interceptMethodAttribute.TargetMethodIsStatic ? null : $"instanceObject.GetInstrumentedType({WrapInQuotes(interceptMethodAttribute.TargetType)}) ?? instanceObject.GetInstrumentedInterface({WrapInQuotes(interceptMethodAttribute.TargetType)})";
             stringFormatArgs.Add(instrumentedTypeExpression);
 
             // {7} = instrumentedMethod delegate type
