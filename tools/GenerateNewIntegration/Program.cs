@@ -34,7 +34,7 @@ public static {1} {2}({3}
         instrumentedMethod =
             MethodBuilder<{7}>
                 .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                .WithTargetType(instrumentedType)
+                .WithConcreteType(instrumentedType)
                 .WithParameters({8})
                 .WithNamespaceAndNameFilters({9}) // Needed for the fallback logic if target method name is overloaded
                 .Build();
