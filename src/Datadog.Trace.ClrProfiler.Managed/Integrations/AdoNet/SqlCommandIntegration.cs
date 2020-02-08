@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<object, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
-                       .WithTargetType(targetType)
+                       .WithConcreteType(targetType)
                        .WithNamespaceAndNameFilters(SqlDataReaderTypeName)
                        .Build();
             }
@@ -108,7 +108,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<object, CommandBehavior, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
-                       .WithTargetType(targetType)
+                       .WithConcreteType(targetType)
                        .WithParameters(commandBehavior)
                        .WithNamespaceAndNameFilters(SqlDataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior)
                        .Build();
@@ -186,7 +186,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CommandBehavior, CancellationToken, Task<DbDataReader>>>
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteReaderAsync))
-                       .WithTargetType(targetType)
+                       .WithConcreteType(targetType)
                        .WithParameters(commandBehavior, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken)
                        .Build();
@@ -240,7 +240,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, int>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteNonQuery)
-                       .WithTargetType(targetType)
+                       .WithConcreteType(targetType)
                        .WithNamespaceAndNameFilters(ClrNames.Int32)
                        .Build();
             }
@@ -315,7 +315,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<int>>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteNonQueryAsync)
-                       .WithTargetType(targetType)
+                       .WithConcreteType(targetType)
                        .WithParameters(cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
                        .Build();
@@ -369,7 +369,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalar)
-                       .WithTargetType(targetType)
+                       .WithConcreteType(targetType)
                        .WithNamespaceAndNameFilters(ClrNames.Object)
                        .Build();
             }
@@ -444,7 +444,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<object>>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalarAsync)
-                       .WithTargetType(targetType)
+                       .WithConcreteType(targetType)
                        .WithParameters(cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
                        .Build();

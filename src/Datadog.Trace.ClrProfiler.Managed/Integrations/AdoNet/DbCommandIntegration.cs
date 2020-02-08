@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<object, object>>
                         .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                        .WithTargetType(instrumentedType)
+                        .WithConcreteType(instrumentedType)
                         .WithParameters()
                         .WithNamespaceAndNameFilters("System.Data.Common.DbDataReader") // Needed for the fallback logic if target method name is overloaded
                         .Build();
@@ -124,7 +124,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<object, CommandBehavior, object>>
                         .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                        .WithTargetType(instrumentedType)
+                        .WithConcreteType(instrumentedType)
                         .WithParameters(commandBehavior)
                         .WithNamespaceAndNameFilters("System.Data.Common.DbDataReader", "System.Data.CommandBehavior") // Needed for the fallback logic if target method name is overloaded
                         .Build();
@@ -210,7 +210,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CommandBehavior, CancellationToken, Task<DbDataReader>>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReaderAsync)
-                       .WithTargetType(instrumentedType)
+                       .WithConcreteType(instrumentedType)
                        .WithParameters(commandBehavior, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken)
                        .Build();
@@ -274,7 +274,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<object, int>>
                         .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                        .WithTargetType(instrumentedType)
+                        .WithConcreteType(instrumentedType)
                         .WithParameters()
                         .WithNamespaceAndNameFilters("System.Int32") // Needed for the fallback logic if target method name is overloaded
                         .Build();
@@ -356,7 +356,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<int>>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteNonQueryAsync)
-                       .WithTargetType(instrumentedType)
+                       .WithConcreteType(instrumentedType)
                        .WithParameters(cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
                        .Build();
@@ -413,7 +413,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<object, object>>
                         .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                        .WithTargetType(instrumentedType)
+                        .WithConcreteType(instrumentedType)
                         .WithParameters()
                         .WithNamespaceAndNameFilters("System.Object") // Needed for the fallback logic if target method name is overloaded
                         .Build();
@@ -495,7 +495,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<object>>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalarAsync)
-                       .WithTargetType(instrumentedType)
+                       .WithConcreteType(instrumentedType)
                        .WithParameters(cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
                        .Build();

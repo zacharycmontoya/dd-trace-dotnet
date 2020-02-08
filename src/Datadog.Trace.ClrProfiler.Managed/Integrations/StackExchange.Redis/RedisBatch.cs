@@ -112,7 +112,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             {
                 instrumentedMethod = MethodBuilder<Func<object, object, object, object, Task<T>>>
                                         .Start(moduleVersionPtr, mdToken, callOpCode, nameof(ExecuteAsync))
-                                        .WithTargetType(_redisBaseType)
+                                        .WithConcreteType(_redisBaseType)
                                         .WithMethodGenerics(typeof(T))
                                         .WithParameters(message, processor, server)
                                         .WithNamespaceAndNameFilters(

@@ -100,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 methodName);
         }
 
-        public MethodBuilder<TDelegate> WithTargetType(Type type)
+        public MethodBuilder<TDelegate> WithConcreteType(Type type)
         {
             _concreteType = type;
             _concreteTypeName = type?.FullName;

@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 instrumentedMethod =
                     MethodBuilder<Action<object, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(Initialize))
-                       .WithTargetType(httpContextType)
+                       .WithConcreteType(httpContextType)
                        .WithParameters(features)
                        .Build();
             }

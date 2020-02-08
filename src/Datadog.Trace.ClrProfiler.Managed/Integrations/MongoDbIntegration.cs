@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 execute =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithTargetType(wireProtocolType)
+                       .WithConcreteType(wireProtocolType)
                        .WithParameters(connection, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.Void, "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken)
                        .Build();
@@ -135,7 +135,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 execute =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithTargetType(wireProtocolType)
+                       .WithConcreteType(wireProtocolType)
                        .WithParameters(connection, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.Ignore, "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken)
                        .Build();
@@ -208,7 +208,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 executeAsync =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithTargetType(wireProtocolType)
+                       .WithConcreteType(wireProtocolType)
                        .WithDeclaringTypeGenerics(wireProtocolGenericArgs)
                        .WithParameters(connection, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.Task, "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken)
@@ -272,7 +272,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 executeAsync =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithTargetType(wireProtocolType)
+                       .WithConcreteType(wireProtocolType)
                        .WithDeclaringTypeGenerics(wireProtocolGenericArgs)
                        .WithParameters(connection, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken)

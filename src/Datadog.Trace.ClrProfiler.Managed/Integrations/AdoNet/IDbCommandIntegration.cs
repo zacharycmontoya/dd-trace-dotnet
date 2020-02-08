@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<IDbCommand, IDataReader>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
-                       .WithTargetType(instrumentedType)
+                       .WithConcreteType(instrumentedType)
                        .WithNamespaceAndNameFilters(DataReaderTypeName)
                        .Build();
             }
@@ -112,7 +112,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<IDbCommand, CommandBehavior, IDataReader>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
-                       .WithTargetType(instrumentedType)
+                       .WithConcreteType(instrumentedType)
                        .WithParameters(commandBehavior)
                        .WithNamespaceAndNameFilters(DataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior)
                        .Build();
@@ -174,7 +174,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<IDbCommand, int>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteNonQuery)
-                       .WithTargetType(instrumentedType)
+                       .WithConcreteType(instrumentedType)
                        .WithNamespaceAndNameFilters(ClrNames.Int32)
                        .Build();
             }
@@ -228,7 +228,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 instrumentedMethod =
                     MethodBuilder<Func<IDbCommand, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalar)
-                       .WithTargetType(instrumentedType)
+                       .WithConcreteType(instrumentedType)
                        .WithNamespaceAndNameFilters(ClrNames.Object)
                        .Build();
             }
