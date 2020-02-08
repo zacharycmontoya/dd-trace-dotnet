@@ -2,7 +2,7 @@
   "profiles": {
     "GenerateNewIntegration": {
       "commandName": "Project",
-      "commandLineArgs": "add-method --target-assemblies System.Data System.Data.Common --target-type System.Data.Common.DbCommand --target-method ExecuteReader --target-minimum-version 4 --target-maximum-version 4 --target-signature-types System.Data.Common.DbDataReader --target-method-is-static false"
+      "commandLineArgs": "add-method -tas System.Data System.Data.Common -tt System.Data.Common.DbCommand -tm ExecuteScalar -tminv 4 -tmaxv 4 -tsig System.Object -tstatic false"
     }
   }
 }

@@ -32,49 +32,54 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
-            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
-            TargetType = DbCommandTypeName,
-            TargetSignatureTypes = new[] { DbDataReaderTypeName },
-            TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetAssemblies = new[] { "System.Data", "System.Data.Common" },
+            TargetType = "System.Data.Common.DbCommand",
+            TargetMethod = "ExecuteReader",
+            TargetSignatureTypes = new[] { "System.Data.Common.DbDataReader" },
+            TargetMinimumVersion = "4.0.0",
+            TargetMaximumVersion = "4.65535.65535")]
         public static object ExecuteReader(
             object command,
             int opCode,
             int mdToken,
             long moduleVersionPtr)
         {
-            Func<DbCommand, DbDataReader> instrumentedMethod;
-            var instrumentedType = command.GetInstrumentedType(DbCommandTypeName);
+            const string methodName = "ExecuteReader";
+            Type instanceType = command.GetType();
+            Type instrumentedType = command.GetInstrumentedType("System.Data.Common.DbCommand");
+            Func<object, object> instrumentedMethod;
 
+            // Use the MethodBuilder to construct a delegate to the original method call
             try
             {
                 instrumentedMethod =
-                    MethodBuilder<Func<DbCommand, DbDataReader>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
-                       .WithTargetType(instrumentedType)
-                       .WithNamespaceAndNameFilters(DbDataReaderTypeName)
-                       .Build();
+                    MethodBuilder<Func<object, object>>
+                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                        .WithTargetType(instrumentedType)
+                        .WithParameters()
+                        .WithNamespaceAndNameFilters("System.Data.Common.DbDataReader") // Needed for the fallback logic if target method name is overloaded
+                        .Build();
             }
             catch (Exception ex)
             {
                 Log.ErrorRetrievingMethod(
                     exception: ex,
-                    moduleVersionPointer: moduleVersionPtr,
-                    mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: DbCommandTypeName,
-                    methodName: nameof(ExecuteReader),
-                    instanceType: command.GetType().AssemblyQualifiedName);
+                    mdToken: mdToken,
+                    moduleVersionPointer: moduleVersionPtr,
+                    methodName: methodName,
+                    instanceType: instanceType?.AssemblyQualifiedName,
+                    instrumentedType: "System.Data.Common.DbCommand");
                 throw;
             }
 
-            var dbCommand = command as DbCommand;
-
+            // Open a scope, decorate the span, and call the original method
+            var dbCommand = command as IDbCommand;
             using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName))
             {
                 try
                 {
-                    return instrumentedMethod(dbCommand);
+                    return instrumentedMethod(command);
                 }
                 catch (Exception ex)
                 {
@@ -94,12 +99,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
-            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
-            TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
-            TargetType = DbCommandTypeName,
-            TargetSignatureTypes = new[] { DbDataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior },
-            TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetAssemblies = new[] { "System.Data", "System.Data.Common" },
+            TargetType = "System.Data.Common.DbCommand",
+            TargetMethod = "ExecuteReader",
+            TargetSignatureTypes = new[] { "System.Data.Common.DbDataReader", "System.Data.CommandBehavior" },
+            TargetMinimumVersion = "4.0.0",
+            TargetMaximumVersion = "4.65535.65535")]
         public static object ExecuteReaderWithBehavior(
             object command,
             int behavior,
@@ -107,40 +112,43 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            Func<DbCommand, CommandBehavior, DbDataReader> instrumentedMethod;
+            const string methodName = "ExecuteReader";
+            Type instanceType = command.GetType();
+            Type instrumentedType = command.GetInstrumentedType("System.Data.Common.DbCommand");
             var commandBehavior = (CommandBehavior)behavior;
-            var instrumentedType = command.GetInstrumentedType(DbCommandTypeName);
+            Func<object, CommandBehavior, object> instrumentedMethod;
 
+            // Use the MethodBuilder to construct a delegate to the original method call
             try
             {
                 instrumentedMethod =
-                    MethodBuilder<Func<DbCommand, CommandBehavior, DbDataReader>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
-                       .WithTargetType(instrumentedType)
-                       .WithParameters(commandBehavior)
-                       .WithNamespaceAndNameFilters(DbDataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior)
-                       .Build();
+                    MethodBuilder<Func<object, CommandBehavior, object>>
+                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                        .WithTargetType(instrumentedType)
+                        .WithParameters(commandBehavior)
+                        .WithNamespaceAndNameFilters("System.Data.Common.DbDataReader", "System.Data.CommandBehavior") // Needed for the fallback logic if target method name is overloaded
+                        .Build();
             }
             catch (Exception ex)
             {
                 Log.ErrorRetrievingMethod(
                     exception: ex,
-                    moduleVersionPointer: moduleVersionPtr,
-                    mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: DbCommandTypeName,
-                    methodName: nameof(ExecuteReader),
-                    instanceType: command.GetType().AssemblyQualifiedName);
+                    mdToken: mdToken,
+                    moduleVersionPointer: moduleVersionPtr,
+                    methodName: methodName,
+                    instanceType: instanceType?.AssemblyQualifiedName,
+                    instrumentedType: "System.Data.Common.DbCommand");
                 throw;
             }
 
-            var dbCommand = command as DbCommand;
-
+            // Open a scope, decorate the span, and call the original method
+            var dbCommand = command as IDbCommand;
             using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName))
             {
                 try
                 {
-                    return instrumentedMethod(dbCommand, commandBehavior);
+                    return instrumentedMethod(command, commandBehavior);
                 }
                 catch (Exception ex)
                 {
@@ -243,42 +251,54 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
-            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
-            TargetType = DbCommandTypeName,
-            TargetSignatureTypes = new[] { ClrNames.Int32 },
-            TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetAssemblies = new[] { "System.Data", "System.Data.Common" },
+            TargetType = "System.Data.Common.DbCommand",
+            TargetMethod = "ExecuteNonQuery",
+            TargetSignatureTypes = new[] { "System.Int32" },
+            TargetMinimumVersion = "4.0.0",
+            TargetMaximumVersion = "4.65535.65535")]
         public static int ExecuteNonQuery(
             object command,
             int opCode,
             int mdToken,
             long moduleVersionPtr)
         {
-            Func<DbCommand, int> instrumentedMethod;
-            var instrumentedType = command.GetInstrumentedType(DbCommandTypeName);
+            const string methodName = "ExecuteNonQuery";
+            Type instanceType = command.GetType();
+            Type instrumentedType = command.GetInstrumentedType("System.Data.Common.DbCommand");
+            Func<object, int> instrumentedMethod;
 
+            // Use the MethodBuilder to construct a delegate to the original method call
             try
             {
                 instrumentedMethod =
-                    MethodBuilder<Func<DbCommand, int>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteNonQuery)
-                       .WithTargetType(instrumentedType)
-                       .WithNamespaceAndNameFilters(ClrNames.Int32)
-                       .Build();
+                    MethodBuilder<Func<object, int>>
+                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                        .WithTargetType(instrumentedType)
+                        .WithParameters()
+                        .WithNamespaceAndNameFilters("System.Int32") // Needed for the fallback logic if target method name is overloaded
+                        .Build();
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {DbCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteNonQuery}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    opCode: opCode,
+                    mdToken: mdToken,
+                    moduleVersionPointer: moduleVersionPtr,
+                    methodName: methodName,
+                    instanceType: instanceType?.AssemblyQualifiedName,
+                    instrumentedType: "System.Data.Common.DbCommand");
                 throw;
             }
 
-            var dbCommand = command as DbCommand;
-
+            // Open a scope, decorate the span, and call the original method
+            var dbCommand = command as IDbCommand;
             using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName))
             {
                 try
                 {
-                    return instrumentedMethod(dbCommand);
+                    return instrumentedMethod(command);
                 }
                 catch (Exception ex)
                 {
@@ -370,42 +390,54 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
-            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
-            TargetType = DbCommandTypeName,
-            TargetSignatureTypes = new[] { ClrNames.Object },
-            TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetAssemblies = new[] { "System.Data", "System.Data.Common" },
+            TargetType = "System.Data.Common.DbCommand",
+            TargetMethod = "ExecuteScalar",
+            TargetSignatureTypes = new[] { "System.Object" },
+            TargetMinimumVersion = "4.0.0",
+            TargetMaximumVersion = "4.65535.65535")]
         public static object ExecuteScalar(
             object command,
             int opCode,
             int mdToken,
             long moduleVersionPtr)
         {
-            Func<DbCommand, object> instrumentedMethod;
-            var instrumentedType = command.GetInstrumentedType(DbCommandTypeName);
+            const string methodName = "ExecuteScalar";
+            Type instanceType = command.GetType();
+            Type instrumentedType = command.GetInstrumentedType("System.Data.Common.DbCommand");
+            Func<object, object> instrumentedMethod;
 
+            // Use the MethodBuilder to construct a delegate to the original method call
             try
             {
                 instrumentedMethod =
-                    MethodBuilder<Func<DbCommand, object>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalar)
-                       .WithTargetType(instrumentedType)
-                       .WithNamespaceAndNameFilters(ClrNames.Object)
-                       .Build();
+                    MethodBuilder<Func<object, object>>
+                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                        .WithTargetType(instrumentedType)
+                        .WithParameters()
+                        .WithNamespaceAndNameFilters("System.Object") // Needed for the fallback logic if target method name is overloaded
+                        .Build();
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {DbCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteScalar}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    opCode: opCode,
+                    mdToken: mdToken,
+                    moduleVersionPointer: moduleVersionPtr,
+                    methodName: methodName,
+                    instanceType: instanceType?.AssemblyQualifiedName,
+                    instrumentedType: "System.Data.Common.DbCommand");
                 throw;
             }
 
-            var dbCommand = command as DbCommand;
-
+            // Open a scope, decorate the span, and call the original method
+            var dbCommand = command as IDbCommand;
             using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName))
             {
                 try
                 {
-                    return instrumentedMethod(dbCommand);
+                    return instrumentedMethod(command);
                 }
                 catch (Exception ex)
                 {
