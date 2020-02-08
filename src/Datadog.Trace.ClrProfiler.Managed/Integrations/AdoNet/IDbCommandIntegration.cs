@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             long moduleVersionPtr)
         {
             Func<IDbCommand, IDataReader> instrumentedMethod;
-            var instrumentedType = command.GetInstrumentedType(DbCommandTypeName);
+            var instrumentedType = command.GetInstrumentedInterface(DbCommandTypeName);
 
             try
             {
@@ -104,7 +104,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             long moduleVersionPtr)
         {
             Func<IDbCommand, CommandBehavior, IDataReader> instrumentedMethod;
-            var instrumentedType = command.GetInstrumentedType(DbCommandTypeName);
+            var instrumentedType = command.GetInstrumentedInterface(DbCommandTypeName);
             var commandBehavior = (CommandBehavior)behavior;
 
             try
@@ -167,7 +167,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             long moduleVersionPtr)
         {
             Func<IDbCommand, int> instrumentedMethod;
-            var instrumentedType = command.GetInstrumentedType(DbCommandTypeName);
+            var instrumentedType = command.GetInstrumentedInterface(DbCommandTypeName);
 
             try
             {
@@ -221,7 +221,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             long moduleVersionPtr)
         {
             Func<IDbCommand, object> instrumentedMethod;
-            var instrumentedType = command.GetInstrumentedType(DbCommandTypeName);
+            var instrumentedType = command.GetInstrumentedInterface(DbCommandTypeName);
 
             try
             {
