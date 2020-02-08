@@ -2,7 +2,7 @@
   "profiles": {
     "GenerateNewIntegration": {
       "commandName": "Project",
-      "commandLineArgs": "add-method --target-assemblies System.Data System.Data.Common --target-type System.Data.Common.DbCommand --target-method ExecuteReader --target-minimum-version 4 --target-maximum-version 4 --target-signature-types System.Data.Common.DbDataReader System.Data.CommandBehavior --target-method-is-static false --override-method-name ExecuteReaderWithBehavior"
+      "commandLineArgs": "add-method --target-assemblies System.Data System.Data.Common --target-type System.Data.Common.DbCommand --target-method ExecuteReader --target-minimum-version 4 --target-maximum-version 4 --target-signature-types System.Data.Common.DbDataReader --target-method-is-static false"
     }
   }
 }

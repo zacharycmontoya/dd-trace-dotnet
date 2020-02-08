@@ -35,7 +35,8 @@ public static {1} {2}({3}
             MethodBuilder<{7}>
                 .Start(moduleVersionPtr, mdToken, opCode, methodName)
                 .WithTargetType(instrumentedType)
-                .WithNamespaceAndNameFilters({8}) // Needed for the fallback logic if target method name is overloaded
+                .WithParameters({8})
+                .WithNamespaceAndNameFilters({9}) // Needed for the fallback logic if target method name is overloaded
                 .Build();
     }}
     catch (Exception ex)
@@ -47,16 +48,16 @@ public static {1} {2}({3}
             moduleVersionPointer: moduleVersionPtr,
             methodName: methodName,
             instanceType: instanceType?.AssemblyQualifiedName,
-            instrumentedType: {9});
+            instrumentedType: {10});
         throw;
     }}
 
     // Open a scope, decorate the span, and call the original method
-    using (Scope scope = CreateScopeFrom{2}({10}))
+    using (Scope scope = CreateScopeFrom{2}({11}))
     {{
         try
         {{
-            return instrumentedMethod({10});
+            return instrumentedMethod({11});
         }}
         catch (Exception ex)
         {{
@@ -173,15 +174,26 @@ public static {1} {2}({3}
             var instrumentedMethodDelegateType = $"Func<{string.Join(", ", typeListForDelegateType.Concat(interpretedVariableTypesOfTargetSignatureTypes.Skip(1)).Concat(interpretedVariableTypesOfTargetSignatureTypes.Take(1)))}>";
             stringFormatArgs.Add(instrumentedMethodDelegateType);
 
-            // {8} = WithNamespaceAndNameFilters params
+            // {8} = WithParameters params
+            // default to new object[0];
+            var withParametersEnumerable = parameterList.AsEnumerable();
+            if (!interceptMethodAttribute.TargetMethodIsStatic)
+            {
+                withParametersEnumerable = withParametersEnumerable.Skip(1);
+            }
+
+            var withParametersArray = string.Join(", ", withParametersEnumerable);
+            stringFormatArgs.Add(withParametersArray);
+
+            // {9} = WithNamespaceAndNameFilters params
             var withNamespaceAndNameFiltersArray = string.Join(", ", interceptMethodAttribute.TargetSignatureTypes.Select(s => WrapInQuotes(StripGenerics(s))));
             stringFormatArgs.Add(withNamespaceAndNameFiltersArray);
 
-            // {9} = the TargetType, being passed to the Logging method
+            // {10} = the TargetType, being passed to the Logging method
             var instrumentedTypeName = WrapInQuotes(interceptMethodAttribute.TargetType);
             stringFormatArgs.Add(instrumentedTypeName);
 
-            // {10} = CreateScope params
+            // {11} = CreateScope params
             var createScopeParameters = string.Join($", ", parameterList);
             stringFormatArgs.Add(createScopeParameters);
 
