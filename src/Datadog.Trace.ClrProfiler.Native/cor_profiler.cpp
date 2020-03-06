@@ -157,27 +157,52 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     return E_FAIL;
   }
 
-  DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION |
-                     COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
-                     COR_PRF_DISABLE_INLINING | COR_PRF_MONITOR_MODULE_LOADS |
-                     COR_PRF_MONITOR_ASSEMBLY_LOADS |
-                     COR_PRF_DISABLE_ALL_NGEN_IMAGES;
+  DWORD event_mask_low;
+  DWORD event_mask_high;
 
-  if (DisableOptimizations()) {
-    Info("Disabling all code optimizations.");
-    event_mask |= COR_PRF_DISABLE_OPTIMIZATIONS;
-  }
-
-  // set event mask to subscribe to events and disable NGEN images
-  // get ICorProfilerInfo5 for net452+
+  // try to get ICorProfilerInfo5 for net452+
   ICorProfilerInfo5* info5;
   hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo5>(&info5);
-  if (SUCCEEDED(hr)) {
-    Debug("Interface ICorProfilerInfo5 found.");
-    hr = info5->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
+
+  if (SUCCEEDED(hr) && info5 != nullptr) {
+    Info("DEBUG Using ICorProfilerInfo5.");
+
+    hr = info5->GetEventMask2(&event_mask_low, &event_mask_high);
+    if (FAILED(hr)) {
+      Warn("Failed to attach profiler: unable to get event mask.");
+      return E_FAIL;
+    }
+
   } else {
-    hr = this->info_->SetEventMask(event_mask);
+    Warn("ICorProfilerInfo5 not found. Using ICorProfilerInfo3. Consider consider upgrading to .NET Framework 4.5.2 or higher.");
+
+    hr = this->info_->GetEventMask(&event_mask_low);
+    if (FAILED(hr)) {
+      Warn("Failed to attach profiler: unable to get event mask.");
+      return E_FAIL;
+    }
   }
+
+  event_mask_low |= // COR_PRF_MONITOR_JIT_COMPILATION |
+                    COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
+                    COR_PRF_DISABLE_INLINING | COR_PRF_MONITOR_MODULE_LOADS |
+                    COR_PRF_MONITOR_ASSEMBLY_LOADS |
+                    COR_PRF_DISABLE_ALL_NGEN_IMAGES;
+
+  if (DisableOptimizations()) {
+    Warn("Disabling all JIT optimizations.");
+    event_mask_low |= COR_PRF_DISABLE_OPTIMIZATIONS;
+  }
+
+  event_mask_high |= COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES;
+
+  // set event mask to subscribe to events, disable inlining, and disable NGEN images
+  if (info5 != nullptr) {
+    hr = info5->SetEventMask2(event_mask_low, event_mask_high);
+  } else {
+    hr = this->info_->SetEventMask(event_mask_low);
+  }
+
   if (FAILED(hr)) {
     Warn("Failed to attach profiler: unable to set event mask.");
     return E_FAIL;
@@ -219,8 +244,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
     return S_OK;
   }
 
-  if (debug_logging_enabled) {
-    Debug("AssemblyLoadFinished: AssemblyName=", assembly_info.name);
+  if (true) {
+    Info("DEBUG AssemblyLoadFinished: AssemblyName=", assembly_info.name);
   }
 
   if (assembly_info.name != "Datadog.Trace.ClrProfiler.Managed"_W) {
@@ -840,11 +865,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
     const WCHAR* wszAssemblyPath,
     ICorProfilerAssemblyReferenceProvider* pAsmRefProvider) {
-  auto assemblyPathString = ToString(wszAssemblyPath);
+  CorProfilerBase::GetAssemblyReferences(wszAssemblyPath, pAsmRefProvider);
+
+  const auto assemblyPathString = ToString(wszAssemblyPath);
+  Info("--- DEBUG GetAssemblyReferences: ", assemblyPathString);
+
   auto filename =
       assemblyPathString.substr(assemblyPathString.find_last_of("\\/") + 1);
-  auto lastNiDllPeriodIndex = filename.rfind(".ni.dll");
-  auto lastDllPeriodIndex = filename.rfind(".dll");
+  const auto lastNiDllPeriodIndex = filename.rfind(".ni.dll");
+  const auto lastDllPeriodIndex = filename.rfind(".dll");
   if (lastNiDllPeriodIndex != std::string::npos) {
     filename.erase(lastNiDllPeriodIndex, 7);
   } else if (lastDllPeriodIndex != std::string::npos) {
@@ -865,7 +894,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
 
   // TODO: Make this assembly reference dynamic vs hard-coded
   const AssemblyReference assemblyReference = trace::AssemblyReference(
-      L"Datadog.Trace.ClrProfiler.Managed, Version=1.13.3.0, Culture="
+      L"Datadog.Trace.ClrProfiler.Managed, Version=1.14.0.0, Culture="
       L"neutral, PublicKeyToken=def86d061d0d2eeb");
 
   ASSEMBLYMETADATA assembly_metadata{};

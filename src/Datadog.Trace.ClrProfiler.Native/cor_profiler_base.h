@@ -4,10 +4,12 @@
 #include <corhlpr.h>
 #include <corprof.h>
 #include <atomic>
+#include "logging.h"
+#include "clr_helpers.h"
 
 namespace trace {
 
-class CorProfilerBase : public ICorProfilerCallback8 {
+class CorProfilerBase : public ICorProfilerCallback6 {
  private:
   std::atomic<int> ref_count_;
 
@@ -180,30 +182,22 @@ class CorProfilerBase : public ICorProfilerCallback8 {
   HRESULT STDMETHODCALLTYPE GetAssemblyReferences(
       const WCHAR* wszAssemblyPath,
       ICorProfilerAssemblyReferenceProvider* pAsmRefProvider) override;
-  HRESULT STDMETHODCALLTYPE
-  ModuleInMemorySymbolsUpdated(ModuleID moduleId) override;
-
-  HRESULT STDMETHODCALLTYPE DynamicMethodJITCompilationStarted(
-      FunctionID functionId, BOOL fIsSafeToBlock, LPCBYTE ilHeader,
-      ULONG cbILHeader) override;
-  HRESULT STDMETHODCALLTYPE DynamicMethodJITCompilationFinished(
-      FunctionID functionId, HRESULT hrStatus, BOOL fIsSafeToBlock) override;
 
   HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid,
                                            void** ppvObject) override {
-    if (riid == __uuidof(ICorProfilerCallback8) ||
-        riid == __uuidof(ICorProfilerCallback7) ||
-        riid == __uuidof(ICorProfilerCallback6) ||
+    if (riid == __uuidof(ICorProfilerCallback6) ||
         riid == __uuidof(ICorProfilerCallback5) ||
         riid == __uuidof(ICorProfilerCallback4) ||
         riid == __uuidof(ICorProfilerCallback3) ||
         riid == __uuidof(ICorProfilerCallback2) ||
         riid == __uuidof(ICorProfilerCallback) || riid == IID_IUnknown) {
+      Info("QueryInterface: found interface ", ToString(riid));
       *ppvObject = this;
       this->AddRef();
       return S_OK;
     }
 
+    Info("QueryInterface: interface not found ", ToString(riid));
     *ppvObject = nullptr;
     return E_NOINTERFACE;
   }

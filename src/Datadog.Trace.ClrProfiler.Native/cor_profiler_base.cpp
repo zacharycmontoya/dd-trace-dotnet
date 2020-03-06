@@ -14,12 +14,12 @@ CorProfilerBase::~CorProfilerBase() {
 
 HRESULT STDMETHODCALLTYPE
 CorProfilerBase::Initialize(IUnknown *pICorProfilerInfoUnk) {
-  Debug("Initialize");
+  Info("DEBUG Initialize");
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::Shutdown() {
-  Debug("Shutdown");
+  Info("DEBUG Shutdown");
   return S_OK;
 }
 
@@ -456,23 +456,7 @@ CorProfilerBase::ConditionalWeakTableElementReferences(ULONG cRootRefs,
 HRESULT STDMETHODCALLTYPE CorProfilerBase::GetAssemblyReferences(
     const WCHAR *wszAssemblyPath,
     ICorProfilerAssemblyReferenceProvider *pAsmRefProvider) {
+  Info("--- DEBUG GetAssemblyReferences: ", wszAssemblyPath);
   return S_OK;
 }
-
-HRESULT STDMETHODCALLTYPE
-CorProfilerBase::ModuleInMemorySymbolsUpdated(ModuleID moduleId) {
-  return S_OK;
-}
-
-HRESULT STDMETHODCALLTYPE CorProfilerBase::DynamicMethodJITCompilationStarted(
-    FunctionID functionId, BOOL fIsSafeToBlock, LPCBYTE ilHeader,
-    ULONG cbILHeader) {
-  return S_OK;
-}
-
-HRESULT STDMETHODCALLTYPE CorProfilerBase::DynamicMethodJITCompilationFinished(
-    FunctionID functionId, HRESULT hrStatus, BOOL fIsSafeToBlock) {
-  return S_OK;
-}
-
 }  // namespace trace
