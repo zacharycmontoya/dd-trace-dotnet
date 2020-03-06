@@ -133,7 +133,7 @@
 
   <Target Name="BuildLoader">
     <ItemGroup>
-      <ManagedLoaderProject Include="src\Datadog.Trace.ClrProfiler.Managed.Loader\Datadog.Trace.ClrProfiler.Managed.Loader.csproj"/>
+      <ManagedLoaderProject Include="$(MSBuildThisFileDirectory)src\Datadog.Trace.ClrProfiler.Managed.Loader\Datadog.Trace.ClrProfiler.Managed.Loader.csproj"/>
     </ItemGroup>
 
     <MSBuild Targets="Build" Projects="@(ManagedLoaderProject)" RemoveProperties="Platform">
@@ -142,14 +142,21 @@
   </Target>
 
   <Target Name="PublishNativeProfilerOnDisk" DependsOnTargets="BuildLoader;BuildCpp">
+    <ItemGroup>
+      <Filesx64 Include="$(MSBuildThisFileDirectory)src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\x64\Datadog.Trace.ClrProfiler.Native.dll"/>
+      <Filesx64 Include="$(MSBuildThisFileDirectory)src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\x64\Datadog.Trace.ClrProfiler.Native.pdb"/>
+      <Filesx86 Include="$(MSBuildThisFileDirectory)src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\x86\Datadog.Trace.ClrProfiler.Native.dll"/>
+      <Filesx86 Include="$(MSBuildThisFileDirectory)src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\x86\Datadog.Trace.ClrProfiler.Native.pdb"/>
+    </ItemGroup>
+
     <Copy Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'All'"
-        SourceFiles="$(MSBuildThisFileDirectory)src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\x64\Datadog.Trace.ClrProfiler.Native.dll"
+        SourceFiles="@(Filesx64)"
         DestinationFolder="$(TracerHomeDirectory)\win-x64"
         SkipUnchangedFiles="true"
         Retries="3"
         RetryDelayMilliseconds="300"/>
     <Copy Condition="'$(Platform)' == 'x86' OR '$(Platform)' == 'All' OR '$(Buildx86Profiler)' == 'true'"
-        SourceFiles="$(MSBuildThisFileDirectory)src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\x86\Datadog.Trace.ClrProfiler.Native.dll"
+        SourceFiles="@(Filesx86)"
         DestinationFolder="$(TracerHomeDirectory)\win-x86"
         SkipUnchangedFiles="true"
         Retries="3"
