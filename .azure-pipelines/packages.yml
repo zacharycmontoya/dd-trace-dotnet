@@ -168,6 +168,15 @@ jobs:
       artifactName: linux-packages
       targetPath: deploy/linux
 
+  - task: UniversalPackages@0
+    displayName: publish universal package
+    inputs:
+      command: publish
+      publishDirectory: deploy/linux
+      vstsFeedPublish: '894bf7e6-9553-4f43-a987-c17eff579928/7fa2b174-8155-410f-ad5b-dac8552b661b'
+      vstsFeedPackagePublish: linux-packages
+      packagePublishDescription: ''
+
 - job: linux_alpine_packages
 
   pool:
