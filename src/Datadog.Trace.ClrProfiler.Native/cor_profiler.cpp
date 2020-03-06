@@ -96,7 +96,10 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
                      environment::azure_app_services_cli_telemetry_profile_value};
 
   for (auto&& env_var : env_vars) {
-    Info("  ", env_var, "=", GetEnvironmentValue(env_var));
+    WSTRING value = GetEnvironmentValue(env_var);
+    if (value != ""_W) {
+      Info("  ", env_var, "=", GetEnvironmentValue(env_var));
+    }
   }
 
   const WSTRING azure_app_services_value =
