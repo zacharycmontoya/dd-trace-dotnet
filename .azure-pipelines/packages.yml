@@ -1,7 +1,11 @@
 trigger:
   branches:
     include:
-      - refs/tags/*
+      - master
+  paths:
+    exclude:
+      - docs/*
+      - .github/*
 pr: none
 
 variables:
