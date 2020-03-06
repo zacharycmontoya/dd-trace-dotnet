@@ -367,6 +367,8 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
                       const mdToken targetFunctionToken,
                       const MethodSignature targetFunctionSignature,
                       mdToken* ret_type_token);
+
+std::string ToString(REFIID riid);
 }  // namespace trace
 
 #endif  // DD_CLR_PROFILER_CLR_HELPERS_H_

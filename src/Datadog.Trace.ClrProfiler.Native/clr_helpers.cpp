@@ -699,7 +699,7 @@ HRESULT CreateAssemblyRefToMscorlib(const ComPtr<IMetaDataAssemblyEmit>& assembl
   return hr;
 }
 
-bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig,                                        
+bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig,
                                             const ComPtr<IMetaDataEmit2>& metadata_emit,
                                             const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
                                             mdToken* ret_type_token) {
@@ -985,5 +985,46 @@ bool ReturnTypeIsValueTypeOrGeneric(
           assembly_emit,
           ret_type_token);
   }
+}
+
+std::string ToString(REFIID riid) {
+  if (riid == __uuidof(ICorProfilerCallback9)) {
+    return "ICorProfilerCallback9";
+  }
+  if (riid == __uuidof(ICorProfilerCallback8)) {
+    return "ICorProfilerCallback8";
+  }
+  if (riid == __uuidof(ICorProfilerCallback7)) {
+    return "ICorProfilerCallback7";
+  }
+  if (riid == __uuidof(ICorProfilerCallback6)) {
+    return "ICorProfilerCallback6";
+  }
+  if (riid == __uuidof(ICorProfilerCallback5)) {
+    return "ICorProfilerCallback5";
+  }
+  if (riid == __uuidof(ICorProfilerCallback4)) {
+    return "ICorProfilerCallback4";
+  }
+  if (riid == __uuidof(ICorProfilerCallback3)) {
+    return "ICorProfilerCallback3";
+  }
+  if (riid == __uuidof(ICorProfilerCallback2)) {
+    return "ICorProfilerCallback2";
+  }
+  if (riid == __uuidof(ICorProfilerCallback)) {
+    return "ICorProfilerCallback";
+  }
+  if (riid == IID_IUnknown) {
+    return "IID_IUnknown";
+  }
+
+  char guid_string[37];  // 32 hex chars + 4 hyphens + null terminator
+  snprintf(guid_string, sizeof(guid_string),
+           "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x", riid.Data1,
+           riid.Data2, riid.Data3, riid.Data4[0], riid.Data4[1], riid.Data4[2],
+           riid.Data4[3], riid.Data4[4], riid.Data4[5], riid.Data4[6],
+           riid.Data4[7]);
+  return guid_string;
 }
 }  // namespace trace
