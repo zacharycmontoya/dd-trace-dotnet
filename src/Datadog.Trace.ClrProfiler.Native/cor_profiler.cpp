@@ -186,7 +186,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   event_mask_low |= // COR_PRF_MONITOR_JIT_COMPILATION |
                     COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
                     COR_PRF_DISABLE_INLINING | COR_PRF_MONITOR_MODULE_LOADS |
-                    COR_PRF_MONITOR_ASSEMBLY_LOADS |
+                    // COR_PRF_MONITOR_ASSEMBLY_LOADS |
                     COR_PRF_DISABLE_ALL_NGEN_IMAGES;
 
   if (DisableOptimizations()) {
