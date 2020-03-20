@@ -12,13 +12,6 @@ namespace Samples.DatabaseHelper
         where TCommand : class, IDbCommand
         where TDataReader : class, IDataReader
     {
-        private const string DropCommandText = "DROP TABLE IF EXISTS Employees; CREATE TABLE Employees (Id int PRIMARY KEY, Name varchar(100));";
-        private const string InsertCommandText = "INSERT INTO Employees (Id, Name) VALUES (@Id, @Name);";
-        private const string SelectOneCommandText = "SELECT Name FROM Employees WHERE Id=@Id;";
-        private const string UpdateCommandText = "UPDATE Employees SET Name=@Name WHERE Id=@Id;";
-        private const string SelectManyCommandText = "SELECT * FROM Employees WHERE Id=@Id;";
-        private const string DeleteCommandText = "DELETE FROM Employees WHERE Id=@Id;";
-
         private readonly TConnection _connection;
 
         private readonly Func<TCommand, int> _executeNonQuery;
@@ -30,6 +23,7 @@ namespace Samples.DatabaseHelper
         private readonly Func<TCommand, Task<object>> _executeScalarAsync;
         private readonly Func<TCommand, Task<TDataReader>> _executeReaderAsync;
         private readonly Func<TCommand, CommandBehavior, Task<TDataReader>> _executeReaderWithBehaviorAsync;
+        private readonly SqlStatementStrategy _sqlStatementStrategy;
 
         public RelationalDatabaseTestHarness(
             TConnection connection,
@@ -40,7 +34,8 @@ namespace Samples.DatabaseHelper
             Func<TCommand, Task<int>> executeNonQueryAsync,
             Func<TCommand, Task<object>> executeScalarAsync,
             Func<TCommand, Task<TDataReader>> executeReaderAsync,
-            Func<TCommand, CommandBehavior, Task<TDataReader>> executeReaderWithBehaviorAsync)
+            Func<TCommand, CommandBehavior, Task<TDataReader>> executeReaderWithBehaviorAsync,
+            SqlStatementStrategy sqlStatementStrategy = null)
         {
             _connection = connection ?? throw new ArgumentNullException(nameof(connection));
 
@@ -54,6 +49,8 @@ namespace Samples.DatabaseHelper
             _executeScalarAsync = executeScalarAsync;
             _executeReaderAsync = executeReaderAsync;
             _executeReaderWithBehaviorAsync = executeReaderWithBehaviorAsync;
+
+            _sqlStatementStrategy = sqlStatementStrategy ?? new SqlStatementStrategy();
         }
 
         public async Task RunAsync()
@@ -102,7 +99,7 @@ namespace Samples.DatabaseHelper
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
-                command.CommandText = DeleteCommandText;
+                command.CommandText = _sqlStatementStrategy.DeleteCommandText;
                 command.AddParameterWithValue("Id", 1);
 
                 int records = _executeNonQuery(command);
@@ -114,14 +111,14 @@ namespace Samples.DatabaseHelper
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
-                command.CommandText = SelectManyCommandText;
+                command.CommandText = _sqlStatementStrategy.SelectManyCommandText;
                 command.AddParameterWithValue("Id", 1);
 
                 using (var reader = _executeReader(command))
                 {
                     var employees = reader.AsDataRecords()
                                           .Select(
-                                               r => new { Id = (int)r["Id"], Name = (string)r["Name"] })
+                                               r => new { Id = Convert.ToInt32(r["Id"]), Name = (string)r["Name"] })
                                           .ToList();
 
                     Console.WriteLine($"Selected {employees.Count} record(s).");
@@ -131,7 +128,7 @@ namespace Samples.DatabaseHelper
                 {
                     var employees = reader.AsDataRecords()
                                           .Select(
-                                               r => new { Id = (int)r["Id"], Name = (string)r["Name"] })
+                                               r => new { Id = Convert.ToInt32(r["Id"]), Name = (string)r["Name"] })
                                           .ToList();
 
                     Console.WriteLine($"Selected {employees.Count} record(s) with `CommandBehavior.Default`.");
@@ -143,7 +140,7 @@ namespace Samples.DatabaseHelper
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
-                command.CommandText = UpdateCommandText;
+                command.CommandText = _sqlStatementStrategy.UpdateCommandText;
                 command.AddParameterWithValue("Name", "Name2");
                 command.AddParameterWithValue("Id", 1);
 
@@ -156,7 +153,7 @@ namespace Samples.DatabaseHelper
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
-                command.CommandText = SelectOneCommandText;
+                command.CommandText = _sqlStatementStrategy.SelectOneCommandText;
                 command.AddParameterWithValue("Id", 1);
 
                 var name = _executeScalar(command) as string;
@@ -168,7 +165,7 @@ namespace Samples.DatabaseHelper
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
-                command.CommandText = InsertCommandText;
+                command.CommandText = _sqlStatementStrategy.InsertCommandText;
                 command.AddParameterWithValue("Id", 1);
                 command.AddParameterWithValue("Name", "Name1");
 
@@ -181,7 +178,7 @@ namespace Samples.DatabaseHelper
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
-                command.CommandText = DropCommandText;
+                command.CommandText = _sqlStatementStrategy.DropCommandText;
 
                 int records = _executeNonQuery(command);
                 Console.WriteLine($"Dropped and recreated table. {records} record(s) affected.");
@@ -192,7 +189,7 @@ namespace Samples.DatabaseHelper
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
-                command.CommandText = DeleteCommandText;
+                command.CommandText = _sqlStatementStrategy.DeleteCommandText;
                 command.AddParameterWithValue("Id", 1);
 
                 if (_executeNonQueryAsync != null)
@@ -207,7 +204,7 @@ namespace Samples.DatabaseHelper
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
-                command.CommandText = SelectManyCommandText;
+                command.CommandText = _sqlStatementStrategy.SelectManyCommandText;
                 command.AddParameterWithValue("Id", 1);
 
                 if (_executeReaderAsync != null)
@@ -216,7 +213,7 @@ namespace Samples.DatabaseHelper
                     {
                         var employees = reader.AsDataRecords()
                                               .Select(
-                                                   r => new { Id = (int)r["Id"], Name = (string)r["Name"] })
+                                                   r => new { Id = Convert.ToInt32(r["Id"]), Name = (string)r["Name"] })
                                               .ToList();
 
                         Console.WriteLine($"Selected {employees.Count} record(s).");
@@ -229,7 +226,7 @@ namespace Samples.DatabaseHelper
                     {
                         var employees = reader.AsDataRecords()
                                               .Select(
-                                                   r => new { Id = (int)r["Id"], Name = (string)r["Name"] })
+                                                   r => new { Id = Convert.ToInt32(r["Id"]), Name = (string)r["Name"] })
                                               .ToList();
 
                         Console.WriteLine($"Selected {employees.Count} record(s) with `CommandBehavior.Default`.");
@@ -242,7 +239,7 @@ namespace Samples.DatabaseHelper
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
-                command.CommandText = UpdateCommandText;
+                command.CommandText = _sqlStatementStrategy.UpdateCommandText;
                 command.AddParameterWithValue("Name", "Name2");
                 command.AddParameterWithValue("Id", 1);
 
@@ -258,7 +255,7 @@ namespace Samples.DatabaseHelper
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
-                command.CommandText = SelectOneCommandText;
+                command.CommandText = _sqlStatementStrategy.SelectOneCommandText;
                 command.AddParameterWithValue("Id", 1);
 
                 if (_executeScalarAsync != null)
@@ -274,7 +271,7 @@ namespace Samples.DatabaseHelper
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
-                command.CommandText = InsertCommandText;
+                command.CommandText = _sqlStatementStrategy.InsertCommandText;
                 command.AddParameterWithValue("Id", 1);
                 command.AddParameterWithValue("Name", "Name1");
 
@@ -290,7 +287,7 @@ namespace Samples.DatabaseHelper
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
-                command.CommandText = DropCommandText;
+                command.CommandText = _sqlStatementStrategy.DropCommandText;
 
                 if (_executeNonQueryAsync != null)
                 {

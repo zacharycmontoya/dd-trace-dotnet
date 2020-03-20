@@ -22,7 +22,8 @@ namespace Samples.Oracle
                     command => command.ExecuteNonQueryAsync(),
                     command => command.ExecuteScalarAsync(),
                     executeReaderAsync: null,
-                    executeReaderWithBehaviorAsync: null
+                    executeReaderWithBehaviorAsync: null,
+                    new OracleSqlStatementStrategy()
                 );
 
 
@@ -40,7 +41,8 @@ namespace Samples.Oracle
                     command => command.ExecuteNonQueryAsync(),
                     command => command.ExecuteScalarAsync(),
                     command => command.ExecuteReaderAsync(),
-                    (command, behavior) => command.ExecuteReaderAsync(behavior)
+                    (command, behavior) => command.ExecuteReaderAsync(behavior),
+                    new OracleSqlStatementStrategy()
                 );
 
                 await testQueries.RunAsync();
@@ -57,7 +59,8 @@ namespace Samples.Oracle
                     executeNonQueryAsync: null,
                     executeScalarAsync: null,
                     executeReaderAsync: null,
-                    executeReaderWithBehaviorAsync: null
+                    executeReaderWithBehaviorAsync: null,
+                    new OracleSqlStatementStrategy()
                 );
 
                 await testQueries.RunAsync();
@@ -72,8 +75,8 @@ namespace Samples.Oracle
             {
                 var host = Environment.GetEnvironmentVariable("ORACLE_HOST") ?? "localhost";
                 var port = Environment.GetEnvironmentVariable("ORACLE_PORT") ?? "1521";
-                var service = Environment.GetEnvironmentVariable("ORACLE_SID") ?? "ORCLCDB";
-                connectionString = $"Data Source={host}:{port}/{service};User Id=oracle;password=oracle";
+                var service = Environment.GetEnvironmentVariable("ORACLE_SID") ?? "xe";
+                connectionString = $"Data Source={host}:{port}/{service};User Id=system;password=oracle";
             }
 
             return new OracleConnection(connectionString);

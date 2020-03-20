@@ -1,5 +1,10 @@
 version: '3'
 services:
+  oracle:
+    image: epiclabs/docker-oracle-xe-11g
+    ports:
+    - "127.0.0.1:1521:1521"
+
   servicestackredis:
     image: redis:4-alpine
     command: redis-server --bind 0.0.0.0
