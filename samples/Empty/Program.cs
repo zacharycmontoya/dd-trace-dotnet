@@ -10,6 +10,7 @@ namespace Sample.Empty
 {
     public static class Program
     {
+        [LoaderOptimization(LoaderOptimization.MultiDomain)]
         public static async Task Main()
         {
             var http = new HttpClient();
