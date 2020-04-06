@@ -14,11 +14,9 @@ namespace Datadog.Trace
 
         private static readonly Assembly RootAssembly = typeof(object).Assembly;
 
+        // https://docs.microsoft.com/en-us/dotnet/framework/migration-guide/how-to-determine-which-versions-are-installed
         private static readonly Tuple<int, string>[] DotNetFrameworkVersionMapping =
         {
-            // highest known value is 528049
-            Tuple.Create(528050, "4.8+"),
-
             // known min value for each framework version
             Tuple.Create(528040, "4.8"),
             Tuple.Create(461808, "4.7.2"),
