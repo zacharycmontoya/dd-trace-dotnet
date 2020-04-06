@@ -1,9 +1,11 @@
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent
 {
     internal interface IApi
     {
-        Task SendTracesAsync(Span[][] traces);
+        Task SendTracesAsync(IReadOnlyCollection<Span[]> traces);
     }
 }
