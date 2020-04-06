@@ -94,11 +94,18 @@ namespace Datadog.Trace.Agent
 
         private async Task FlushTracesTaskLoopAsync()
         {
+            // use the same params array over and over,
+            // instead of allocating a new one every time we flush
+            var tasks = new Task[2];
+            tasks[0] = _processExit.Task;
+
             while (true)
             {
                 try
                 {
-                    await Task.WhenAny(Task.Delay(TimeSpan.FromSeconds(1)), _processExit.Task)
+                    tasks[1] = Task.Delay(TimeSpan.FromSeconds(1));
+
+                    await Task.WhenAny(tasks)
                               .ConfigureAwait(false);
 
                     if (_processExit.Task.IsCompleted)

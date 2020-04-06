@@ -1,5 +1,6 @@
 #if NETSTANDARD
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.Abstractions;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
@@ -90,6 +91,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private static SpanContext ExtractPropagatedContext(HttpRequest request)
         {
+            // TODO: reduce allocations by reading headers directly from HttpRequest.Headers,
+            // and only if we detect relevant headers are even present in the first place
             try
             {
                 // extract propagation details from http headers
@@ -101,12 +104,9 @@ namespace Datadog.Trace.DiagnosticListeners
 
                     foreach (var header in requestHeaders)
                     {
-                        string key = header.Key;
-                        string[] values = header.Value.ToArray();
-
-                        if (key != null && values.Length > 0)
+                        if (header.Key != null && header.Value.Count > 0)
                         {
-                            headersCollection.Add(key, values);
+                            headersCollection.Add(header.Key, (IEnumerable<string>)header.Value);
                         }
                     }
 

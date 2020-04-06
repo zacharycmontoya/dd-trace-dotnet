@@ -9,6 +9,31 @@ namespace Datadog.Trace.ExtensionMethods
     /// </summary>
     public static class SpanExtensions
     {
+        private static readonly string[] DatabaseNameKeys =
+        {
+            "Database",
+            "Initial Catalog",
+            "InitialCatalog"
+        };
+
+        private static readonly string[] DatabaseUserKeys =
+        {
+            "User ID",
+            "UserID"
+        };
+
+        private static readonly string[] DatabaseHostKeys =
+        {
+            "Server",
+            "Data Source",
+            "DataSource",
+            "Network Address",
+            "NetworkAddress",
+            "Address",
+            "Addr",
+            "Host"
+        };
+
         /// <summary>
         /// Sets the sampling priority for the trace that contains the specified <see cref="Span"/>.
         /// </summary>
@@ -35,15 +60,18 @@ namespace Datadog.Trace.ExtensionMethods
             span.Type = SpanTypes.Sql;
 
             // parse the connection string
-            var builder = new DbConnectionStringBuilder { ConnectionString = command.Connection.ConnectionString };
+            var builder = new DbConnectionStringBuilder
+                          {
+                              ConnectionString = command.Connection.ConnectionString
+                          };
 
-            string database = GetConnectionStringValue(builder, "Database", "Initial Catalog", "InitialCatalog");
+            string database = GetConnectionStringValue(builder, DatabaseNameKeys);
             span.SetTag(Tags.DbName, database);
 
-            string user = GetConnectionStringValue(builder, "User ID", "UserID");
+            string user = GetConnectionStringValue(builder, DatabaseUserKeys);
             span.SetTag(Tags.DbUser, user);
 
-            string server = GetConnectionStringValue(builder, "Server", "Data Source", "DataSource", "Network Address", "NetworkAddress", "Address", "Addr", "Host");
+            string server = GetConnectionStringValue(builder, DatabaseHostKeys);
             span.SetTag(Tags.OutHost, server);
         }
 
@@ -63,7 +91,7 @@ namespace Datadog.Trace.ExtensionMethods
             span.SetTag(Tags.Language, TracerConstants.Language);
         }
 
-        private static string GetConnectionStringValue(DbConnectionStringBuilder builder, params string[] names)
+        private static string GetConnectionStringValue(DbConnectionStringBuilder builder, string[] names)
         {
             foreach (string name in names)
             {
