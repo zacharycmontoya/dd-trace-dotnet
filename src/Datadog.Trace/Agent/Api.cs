@@ -92,7 +92,7 @@ namespace Datadog.Trace.Agent
                     var traceIds = GetUniqueTraceIds(traces);
 
                     // re-create content on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
-                    using (var content = new MsgPackContent<IReadOnlyCollection<Span[]>>(traces, SerializationContext))
+                    using (var content = new MsgPackContent<IReadOnlyCollection<IReadOnlyCollection<Span>>>(traces, SerializationContext))
                     {
                         content.Headers.Add(AgentHttpHeaderNames.TraceCount, traceIds.Count.ToString());
 
