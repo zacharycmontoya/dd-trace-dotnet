@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 
@@ -20,7 +21,7 @@ namespace Datadog.Trace
 
         Span StartSpan(string operationName, ISpanContext parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope);
 
-        void Write(Span[] span);
+        void Write(IReadOnlyCollection<Span> span);
 
         /// <summary>
         /// Make a span the active span and return its new scope.

@@ -76,7 +76,7 @@ namespace Datadog.Trace.Agent
             _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
         }
 
-        public async Task SendTracesAsync(IReadOnlyCollection<Span[]> traces)
+        public async Task SendTracesAsync(IReadOnlyCollection<IReadOnlyCollection<Span>> traces)
         {
             // retry up to 5 times with exponential back-off
             var retryLimit = 5;
@@ -167,7 +167,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private static HashSet<ulong> GetUniqueTraceIds(IReadOnlyCollection<Span[]> traces)
+        private static HashSet<ulong> GetUniqueTraceIds(IReadOnlyCollection<IReadOnlyCollection<Span>> traces)
         {
             var uniqueTraceIds = new HashSet<ulong>();
 

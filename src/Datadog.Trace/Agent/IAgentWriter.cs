@@ -1,10 +1,11 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent
 {
     internal interface IAgentWriter
     {
-        void WriteTrace(Span[] trace);
+        void WriteTrace(IReadOnlyCollection<Span> trace);
 
         Task FlushAndCloseAsync();
 

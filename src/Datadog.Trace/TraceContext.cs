@@ -8,12 +8,15 @@ namespace Datadog.Trace
 {
     internal class TraceContext : ITraceContext
     {
+        private const int InitialSpanCapacity = 8;
+
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<TraceContext>();
 
         private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
         private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
-        private readonly List<Span> _spans = new List<Span>();
+        private readonly object _spansLock = new object();
 
+        private List<Span> _spans;
         private int _openSpans;
         private SamplingPriority? _samplingPriority;
         private bool _samplingPriorityLocked;
@@ -22,8 +25,6 @@ namespace Datadog.Trace
         {
             Tracer = tracer;
         }
-
-        public Span RootSpan { get; private set; }
 
         public DateTimeOffset UtcNow => _utcStart.Add(_stopwatch.Elapsed);
 
@@ -48,12 +49,16 @@ namespace Datadog.Trace
 
         public void AddSpan(Span span)
         {
-            lock (_spans)
+            lock (_spansLock)
             {
-                if (RootSpan == null)
+                if (_spans == null)
+                {
+                    _spans = new List<Span>(InitialSpanCapacity);
+                }
+
+                if (_spans.Count == 0)
                 {
                     // first span added is the root span
-                    RootSpan = span;
                     DecorateRootSpan(span);
 
                     if (_samplingPriority == null)
@@ -69,8 +74,7 @@ namespace Datadog.Trace
                         {
                             // this is a local root span (i.e. not propagated).
                             // determine an initial sampling priority for this trace, but don't lock it yet
-                            _samplingPriority =
-                                Tracer.Sampler?.GetSamplingPriority(RootSpan);
+                            _samplingPriority = Tracer.Sampler?.GetSamplingPriority(span);
                         }
                     }
                 }
@@ -82,7 +86,10 @@ namespace Datadog.Trace
 
         public void CloseSpan(Span span)
         {
-            if (span == RootSpan)
+            // we only add spans to the list, never remove them,
+            // so this is safe without locking.
+            // first span is the root span.
+            if (_spans?.Count > 0 && span == _spans[0])
             {
                 // lock sampling priority and set metric when root span finishes
                 LockSamplingPriority();
@@ -97,16 +104,16 @@ namespace Datadog.Trace
                 }
             }
 
-            Span[] spansToWrite = null;
+            IReadOnlyCollection<Span> spansToWrite = null;
 
-            lock (_spans)
+            lock (_spansLock)
             {
                 _openSpans--;
 
                 if (_openSpans == 0)
                 {
-                    spansToWrite = _spans.ToArray();
-                    _spans.Clear();
+                    spansToWrite = _spans;
+                    _spans = null;
                 }
             }
 

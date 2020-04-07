@@ -6,6 +6,6 @@ namespace Datadog.Trace.Agent
 {
     internal interface IApi
     {
-        Task SendTracesAsync(IReadOnlyCollection<Span[]> traces);
+        Task SendTracesAsync(IReadOnlyCollection<IReadOnlyCollection<Span>> traces);
     }
 }

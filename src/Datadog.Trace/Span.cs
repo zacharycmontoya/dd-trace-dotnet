@@ -90,8 +90,6 @@ namespace Datadog.Trace
 
         internal bool IsFinished { get; private set; }
 
-        internal bool IsRootSpan => Context?.TraceContext?.RootSpan == this;
-
         /// <summary>
         /// Returns a <see cref="string" /> that represents this instance.
         /// </summary>
