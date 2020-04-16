@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>netcoreapp3.1;net48</TargetFrameworks>
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+
+    <PackageReference Include="JetBrains.Profiler.Api" Version="1.1.6" />
+  </ItemGroup>
+
+</Project>
