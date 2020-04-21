@@ -32,8 +32,7 @@ namespace AspNetCore31.NoTraces
             app.MapWhen(ctx => ctx.Request.Path.StartsWithSegments("/test"),
                         appBuilder =>
                         {
-                            appBuilder.UseMiddleware<CustomMiddlewareInterface>();
-                            appBuilder.UseMiddleware<CustomMiddlewareNoInterface>();
+                            appBuilder.UseMiddleware<CustomMiddleware>();
                         }
             );
 
@@ -45,28 +44,19 @@ namespace AspNetCore31.NoTraces
         }
     }
 
-    public class CustomMiddlewareInterface : IMiddleware
-    {
-        public Task InvokeAsync(HttpContext context, RequestDelegate next)
-        {
-            Console.WriteLine("CustomMiddlewareInterface.InvokeAsync()");
-            return next(context);
-        }
-    }
-
-    public class CustomMiddlewareNoInterface
+    public class CustomMiddleware
     {
         private readonly RequestDelegate _nextDelegate;
 
-        public CustomMiddlewareNoInterface(RequestDelegate nextDelegate)
+        public CustomMiddleware(RequestDelegate nextDelegate)
         {
             _nextDelegate = nextDelegate;
         }
 
-        public Task InvokeAsync(HttpContext context)
+        public async Task InvokeAsync(HttpContext context)
         {
             Console.WriteLine("CustomMiddlewareNoInterface.InvokeAsync()");
-            return _nextDelegate(context);
+            await context.Response.WriteAsync($"Request.Path = \"{context.Request.Path}\" (detected /test)");
         }
     }
 }

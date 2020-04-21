@@ -1,0 +1,21 @@
+﻿version: '3'
+services:
+  datadog-agent:
+    image: datadog/agent:latest
+    environment:
+    - DD_API_KEY=${DD_API_KEY}
+    - DD_ENV=${DD_ENV}
+    - DD_APM_ENABLED=true
+    - DD_APM_NON_LOCAL_TRAFFIC=true
+    - DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
+  aspnetcore31-notraces:
+    depends_on:
+    - datadog-agent
+    image: aspnetcore31-notraces
+    build:
+      context: .
+    ports:
+    - "127.0.0.1:60000:80"
+    environment:
+    - DD_AGENT_HOST=datadog-agent
+    - DD_TRACE_DEBUG=true

@@ -2,7 +2,7 @@
   "profiles": {
     "AspNetCore31.NoTraces": {
       "commandName": "Project",
-      "launchBrowser": true,
+      "launchBrowser": false,
       "applicationUrl": "https://localhost:60001;http://localhost:60000",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
