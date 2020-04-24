@@ -95,11 +95,18 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
                      environment::domain_neutral_instrumentation,
                      environment::azure_app_services,
                      environment::azure_app_services_app_pool_id,
-                     environment::azure_app_services_cli_telemetry_profile_value};
+                     environment::azure_app_services_cli_telemetry_profile_value,
+                     environment::force_il_rewriter};
 
   for (auto&& env_var : env_vars) {
     Info("  ", env_var, "=", GetEnvironmentValue(env_var));
   }
+
+  // check if we are forcing ILRewriter calls (used for debugging purposes)
+  const auto force_il_rewriter_setting =
+      GetEnvironmentValue(environment::force_il_rewriter);
+
+  force_il_rewriter_setting_ = (force_il_rewriter_setting == "1"_W || force_il_rewriter_setting == "true"_W);
 
   const WSTRING azure_app_services_value =
       GetEnvironmentValue(environment::azure_app_services);
@@ -331,6 +338,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       "netstandard"_W,
       "Datadog.Trace"_W,
       "Datadog.Trace.ClrProfiler.Managed"_W,
+      "Datadog.Trace.ClrProfiler.Managed.Core"_W,
+      "Datadog.Trace.ClrProfiler.Managed.Loader"_W,
       "MsgPack"_W,
       "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers0"_W,
       "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers1"_W,
@@ -401,7 +410,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   // don't skip Microsoft.AspNetCore.Hosting so we can run the startup hook and
   // subscribe to DiagnosticSource events
-  if (module_info.assembly.name != "Microsoft.AspNetCore.Hosting"_W) {
+  if (!force_il_rewriter_setting_ && module_info.assembly.name != "Microsoft.AspNetCore.Hosting"_W) {
     filtered_integrations =
         FilterIntegrationsByTarget(filtered_integrations, assembly_import);
 
@@ -512,7 +521,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     module_metadata = module_id_to_info_map_[module_id];
   }
 
-  if (module_metadata == nullptr) {
+  if (!force_il_rewriter_setting_ && module_metadata == nullptr) {
     // we haven't stored a ModuleMetadata for this module,
     // so we can't modify its IL
     return S_OK;
@@ -535,7 +544,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   // hook which, at a minimum, must add an AssemblyResolve event so we can find
   // Datadog.Trace.ClrProfiler.Managed.dll and its dependencies on-disk since it
   // is no longer provided in a NuGet package
-  if (first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
+  if (!force_il_rewriter_setting_ &&
+      first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
       first_jit_compilation_app_domains.end()) {
     first_jit_compilation_app_domains.insert(module_metadata->app_domain_id);
     hr = RunILStartupHook(module_metadata->metadata_emit, module_id,
@@ -546,14 +556,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   // we don't actually need to instrument anything in
   // Microsoft.AspNetCore.Hosting, it was included only to ensure the startup
   // hook is called for AspNetCore applications
-  if (module_metadata->assemblyName == "Microsoft.AspNetCore.Hosting"_W) {
+  if (!force_il_rewriter_setting_ && module_metadata->assemblyName == "Microsoft.AspNetCore.Hosting"_W) {
     return S_OK;
   }
 
   // Get valid method replacements for this caller method
   auto method_replacements =
       module_metadata->GetMethodReplacementsForCaller(caller);
-  if (method_replacements.empty()) {
+  if (!force_il_rewriter_setting_ && method_replacements.empty()) {
     return S_OK;
   }
 
@@ -593,6 +603,7 @@ HRESULT CorProfiler::ProcessReplacementCalls(
   ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
   bool modified = false;
 
+  Debug("ProcessReplacementCalls() calling ILRewriter.Import() for module_id=", module_id, ", function_token=", function_token);
   auto hr = rewriter.Import();
   RETURN_OK_IF_FAILED(hr);
 
@@ -699,7 +710,6 @@ HRESULT CorProfiler::ProcessReplacementCalls(
           " name=", caller.type.name, ".", caller.name, "()");
         continue;
       }
-      
 
       auto method_def_md_token = target.id;
 
@@ -962,6 +972,7 @@ HRESULT CorProfiler::ProcessInsertionCalls(
   ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
   bool modified = false;
 
+  Debug("ProcessInsertionCalls() calling ILRewriter.Import() for module_id=", module_id, ", function_token=", function_token);
   auto hr = rewriter.Import();
   RETURN_OK_IF_FAILED(hr);
 
@@ -1101,6 +1112,7 @@ HRESULT CorProfiler::RunILStartupHook(
     return S_OK;
   }
 
+  Debug("RunILStartupHook() calling ILRewriter.Import() for module_id=", module_id, ", function_token=", function_token);
   ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
   hr = rewriter.Import();
   RETURN_OK_IF_FAILED(hr);

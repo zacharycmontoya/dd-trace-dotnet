@@ -89,6 +89,8 @@ const WSTRING azure_app_services_app_pool_id = "APP_POOL_ID"_W;
 const WSTRING azure_app_services_cli_telemetry_profile_value =
     "DOTNET_CLI_TELEMETRY_PROFILE"_W;
 
+const WSTRING force_il_rewriter = "DD_DOTNET_FORCE_IL_REWRITER"_W;
+
 }  // namespace environment
 }  // namespace trace
 

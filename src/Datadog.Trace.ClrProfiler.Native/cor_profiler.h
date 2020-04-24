@@ -19,6 +19,7 @@ namespace trace {
 class CorProfiler : public CorProfilerBase {
  private:
   bool is_attached_ = false;
+  bool force_il_rewriter_setting_ = false;
   RuntimeInformation runtime_information_;
   std::vector<Integration> integrations_;
 
