@@ -14,6 +14,7 @@
         "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
         "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json",
         "DD_DOTNET_FORCE_IL_REWRITER": "true",
+        "DD_DOTNET_FORCE_IL_REWRITER_MODULE": "ConsoleApp",
         "DD_TRACE_DEBUG": "true"
       },
       "nativeDebugging": true

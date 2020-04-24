@@ -408,9 +408,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   const auto assembly_emit =
       metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
+  WSTRING force_il_rewriter_on_module =
+      GetEnvironmentValue(environment::force_il_rewriter_on_module);
+
   // don't skip Microsoft.AspNetCore.Hosting so we can run the startup hook and
   // subscribe to DiagnosticSource events
-  if (!force_il_rewriter_setting_ && module_info.assembly.name != "Microsoft.AspNetCore.Hosting"_W) {
+  if (module_info.assembly.name != "Microsoft.AspNetCore.Hosting"_W &&
+      module_info.assembly.name != force_il_rewriter_on_module) {
     filtered_integrations =
         FilterIntegrationsByTarget(filtered_integrations, assembly_import);
 
@@ -521,14 +525,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     module_metadata = module_id_to_info_map_[module_id];
   }
 
-  if (!force_il_rewriter_setting_ && module_metadata == nullptr) {
+  if (module_metadata == nullptr) {
     // we haven't stored a ModuleMetadata for this module,
     // so we can't modify its IL
     return S_OK;
   }
 
   // get function info
-  auto caller =
+  const auto caller =
       GetFunctionInfo(module_metadata->metadata_import, function_token);
   if (!caller.IsValid()) {
     return S_OK;
@@ -556,7 +560,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   // we don't actually need to instrument anything in
   // Microsoft.AspNetCore.Hosting, it was included only to ensure the startup
   // hook is called for AspNetCore applications
-  if (!force_il_rewriter_setting_ && module_metadata->assemblyName == "Microsoft.AspNetCore.Hosting"_W) {
+  if (module_metadata->assemblyName == "Microsoft.AspNetCore.Hosting"_W) {
     return S_OK;
   }
 
