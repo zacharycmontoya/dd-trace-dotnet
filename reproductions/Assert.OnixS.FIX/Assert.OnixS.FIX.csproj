@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net48</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="OnixS.FixEngineNet.Trial.lic" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="FIXForge.NET.FIX.Engine-net-4.8_x64">
+      <HintPath>lib\FIXForge.NET.FIX.Engine-net-4.8_x64.dll</HintPath>
+    </Reference>
+    <Reference Include="FIXForge.NET.FIX.Fix2FixmlConverter-net-4.8_x64">
+      <HintPath>lib\FIXForge.NET.FIX.Fix2FixmlConverter-net-4.8_x64.dll</HintPath>
+    </Reference>
+    <Reference Include="FIXForge.NET.FIX.Scheduler-net-4.8_x64">
+      <HintPath>lib\FIXForge.NET.FIX.Scheduler-net-4.8_x64.dll</HintPath>
+    </Reference>
+    <Reference Include="OnixS.Common-net-4.8">
+      <HintPath>lib\OnixS.Common-net-4.8.dll</HintPath>
+    </Reference>
+    <Reference Include="OnixS.Common.UI-net-4.8">
+      <HintPath>lib\OnixS.Common.UI-net-4.8.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="OnixS.FixEngineNet.Trial.lic">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>
