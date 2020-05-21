@@ -31,7 +31,7 @@ namespace Datadog.Trace.Tests.Logging
             return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
-        internal static void LogInSpanWithServiceName(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, string service, out Scope scope)
+        internal static void LogInSpanWithCustomServiceName(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, string service, out Scope scope)
         {
             using (scope = tracer.StartActive("span", serviceName: service))
             {
@@ -48,7 +48,7 @@ namespace Datadog.Trace.Tests.Logging
             {
                 using (var mappedContext = openMappedContext(CustomPropertyName, CustomPropertyValue, false))
                 {
-                    logger.Log(LogLevel.Info, () => $"Started and activated parent scope.");
+                    logger.Log(LogLevel.Info, () => $"{LogPrefix}Started and activated parent scope.");
 
                     using (childScope = tracer.StartActive("child"))
                     {
@@ -98,7 +98,7 @@ namespace Datadog.Trace.Tests.Logging
 
             using (parentScope = tracer.StartActive("parent"))
             {
-                logger.Log(LogLevel.Info, () => $"Started and activated parent scope.");
+                logger.Log(LogLevel.Info, () => $"{LogPrefix}Started and activated parent scope.");
 
                 using (var mappedContext = openMappedContext(CustomPropertyName, CustomPropertyValue, false))
                 {
