@@ -27,6 +27,10 @@ namespace Datadog.Trace.Tests.Logging
             layout.Attributes.Add(new JsonAttribute("time", Layout.FromString("${longdate}")));
             layout.Attributes.Add(new JsonAttribute("level", Layout.FromString("${level:uppercase=true}")));
             layout.Attributes.Add(new JsonAttribute("message", Layout.FromString("${message}")));
+            layout.Attributes.Add(new JsonAttribute("dd.service", Layout.FromString("${gdc:item=dd.service}")));
+            layout.Attributes.Add(new JsonAttribute("dd.version", Layout.FromString("${gdc:item=dd.version}")));
+            layout.Attributes.Add(new JsonAttribute("dd.env", Layout.FromString("${gdc:item=dd.env}")));
+
             _target = new MemoryTarget
             {
                 Layout = layout

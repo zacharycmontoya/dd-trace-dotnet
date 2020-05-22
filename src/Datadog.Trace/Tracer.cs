@@ -506,6 +506,14 @@ namespace Datadog.Trace
                 }
                 else if (logProvider is NLogLogProvider)
                 {
+                    // Obtain the static NLog.GlobalDiagnosticsContext.Set(string, string) method
+                    var globalContextType = Type.GetType("NLog.GlobalDiagnosticsContext, NLog");
+                    var setMethod = globalContextType.GetMethod("Set", typeof(string), typeof(string));
+
+                    // Pass the key/value pairs to the Set(string, string) method
+                    setMethod.Invoke(null, new object[] { "dd.service", defaultServiceName });
+                    setMethod.Invoke(null, new object[] { "dd.version", version });
+                    setMethod.Invoke(null, new object[] { "dd.env", env });
                 }
             }
             catch (Exception ex)

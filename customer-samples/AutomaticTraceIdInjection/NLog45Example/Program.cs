@@ -9,11 +9,16 @@ namespace NLog45Example
 
         static void Main(string[] args)
         {
+            // Initialize the Tracer at the start of the application, so that the
+            // application's service, version, and env are added to all logs.
+            // Automatic instrumentation will do this, but we're not using it in this example
+            var tracer = Tracer.Instance;
+
             using (MappedDiagnosticsLogicalContext.SetScoped("order-number", 1024))
             {
                 Logger.Info("Message before a trace.");
 
-                using (var scope = Tracer.Instance.StartActive("NLog45Example - Main()"))
+                using (var scope = tracer.StartActive("NLog45Example - Main()"))
                 {
                     Logger.Info("Message during a trace.");
                 }
