@@ -9,6 +9,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Logging.LogProviders;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -150,7 +151,7 @@ namespace Datadog.Trace
             // LibLog logging context when a scope is activated/closed
             if (Settings.LogsInjectionEnabled)
             {
-                InitializeLibLogScopeEventSubscriber(_scopeManager, DefaultServiceName, Settings.ServiceVersion, Settings.Environment);
+                InitializeLogsInjection(DefaultServiceName, Settings.ServiceVersion, Settings.Environment);
             }
         }
 
@@ -479,9 +480,38 @@ namespace Datadog.Trace
             }
         }
 
-        private void InitializeLibLogScopeEventSubscriber(IScopeManager scopeManager, string defaultServiceName, string version, string env)
+        private void InitializeLogsInjection(string defaultServiceName, string version, string env)
         {
-            new LibLogScopeEventSubscriber(scopeManager, defaultServiceName, version ?? string.Empty, env ?? string.Empty);
+            new LibLogScopeEventSubscriber(_scopeManager, defaultServiceName, version ?? string.Empty, env ?? string.Empty);
+
+            // Initialize the `dd.service`, `dd.env`, and `dd.version` as global properties in the logger
+            try
+            {
+                var logProvider = LogProvider.CurrentLogProvider ?? LogProvider.ResolveLogProvider();
+                if (logProvider is Log4NetLogProvider)
+                {
+                    // Obtain the static log4net.GlobalContext.Properties object
+                    var globalContextType = Type.GetType("log4net.GlobalContext, log4net");
+                    var propertiesProperty = globalContextType.GetProperty("Properties");
+                    var propertiesObject = propertiesProperty.GetValue(null);
+
+                    // Get the "this" Items indexed property
+                    var globalContextPropertiesType = propertiesProperty.PropertyType;
+                    var propertiesIndexerProperty = globalContextPropertiesType.GetProperty("Item");
+
+                    // Pass the key/value pairs to the "this" Items indexed property
+                    propertiesIndexerProperty.SetValue(propertiesObject, defaultServiceName, new string[] { "dd.service" });
+                    propertiesIndexerProperty.SetValue(propertiesObject, version, new string[] { "dd.version" });
+                    propertiesIndexerProperty.SetValue(propertiesObject, env, new string[] { "dd.env" });
+                }
+                else if (logProvider is NLogLogProvider)
+                {
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Could not successfully start the LibLogScopeEventSubscriber. There was an issue resolving the application logger.");
+            }
         }
 
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)
