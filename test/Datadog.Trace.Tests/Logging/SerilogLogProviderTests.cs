@@ -45,21 +45,6 @@ namespace Datadog.Trace.Tests.Logging
         }
 
         [Fact]
-        public void LogsInjectionEnabled_AllLogs_AddsServiceIdentifiers()
-        {
-            // Assert that the Serilog log provider is correctly being used
-            Assert.IsType<SerilogLogProvider>(LogProvider.CurrentLogProvider);
-
-            // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
-            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
-            LoggingProviderTestHelpers.LogEverywhere(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
-
-            // Filter the logs
-            _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => LogEventContainsServiceIdentifiers(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment));
-        }
-
-        [Fact]
         public void LogsInjectionEnabled_InsideFirstLevelSpan_AddsCorrelationIdentifiers()
         {
             // Assert that the Serilog log provider is correctly being used
@@ -72,6 +57,21 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
             Assert.All(_logEvents, e => LogEventContainsCorrelationIdentifiers(e, parentScope));
+        }
+
+        [Fact]
+        public void LogsInjectionEnabled_InsideFirstLevelSpan_AddsServiceIdentifiers()
+        {
+            // Assert that the Serilog log provider is correctly being used
+            Assert.IsType<SerilogLogProvider>(LogProvider.CurrentLogProvider);
+
+            // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
+            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
+            LoggingProviderTestHelpers.LogInParentSpan(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+
+            // Filter the logs
+            _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
+            Assert.All(_logEvents, e => LogEventContainsServiceIdentifiers(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment));
         }
 
         [Fact]
@@ -90,6 +90,21 @@ namespace Datadog.Trace.Tests.Logging
         }
 
         [Fact]
+        public void LogsInjectionEnabled_InsideSecondLevelSpan_AddsServiceIdentifiers()
+        {
+            // Assert that the Serilog log provider is correctly being used
+            Assert.IsType<SerilogLogProvider>(LogProvider.CurrentLogProvider);
+
+            // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
+            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
+            LoggingProviderTestHelpers.LogInChildSpan(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+
+            // Filter the logs
+            _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
+            Assert.All(_logEvents, e => LogEventContainsServiceIdentifiers(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment));
+        }
+
+        [Fact]
         public void LogsInjectionEnabled_OutsideSpans_DoesNotAddCorrelationIdentifiers()
         {
             // Assert that the Serilog log provider is correctly being used
@@ -102,6 +117,21 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
             Assert.All(_logEvents, e => LogEventDoesNotContainCorrelationIdentifiers(e));
+        }
+
+        [Fact]
+        public void LogsInjectionEnabled_OutsideSpans_DoesNotAddServiceIdentifiers()
+        {
+            // Assert that the Serilog log provider is correctly being used
+            Assert.IsType<SerilogLogProvider>(LogProvider.CurrentLogProvider);
+
+            // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
+            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
+            LoggingProviderTestHelpers.LogOutsideSpans(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+
+            // Filter the logs
+            _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
+            Assert.All(_logEvents, e => LogEventDoesNotContainServiceIdentifiers(e));
         }
 
         [Fact]

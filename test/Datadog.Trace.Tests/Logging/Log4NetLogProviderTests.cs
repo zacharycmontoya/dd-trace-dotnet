@@ -49,22 +49,6 @@ namespace Datadog.Trace.Tests.Logging
         }
 
         [Fact]
-        public void LogsInjectionEnabled_AllLogs_AddsServiceIdentifiers()
-        {
-            // Assert that the Log4Net log provider is correctly being used
-            Assert.IsType<Log4NetLogProvider>(LogProvider.CurrentLogProvider);
-
-            // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
-            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
-            LoggingProviderTestHelpers.LogEverywhere(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
-
-            // Filter the logs
-            List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
-            filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventContainsServiceIdentifiers(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment));
-        }
-
-        [Fact]
         public void LogsInjectionEnabled_InsideFirstLevelSpan_AddsCorrelationIdentifiers()
         {
             // Assert that the Log4Net log provider is correctly being used
@@ -81,6 +65,22 @@ namespace Datadog.Trace.Tests.Logging
         }
 
         [Fact]
+        public void LogsInjectionEnabled_InsideFirstLevelSpan_AddsServiceIdentifiers()
+        {
+            // Assert that the Log4Net log provider is correctly being used
+            Assert.IsType<Log4NetLogProvider>(LogProvider.CurrentLogProvider);
+
+            // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
+            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
+            LoggingProviderTestHelpers.LogInParentSpan(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+
+            // Filter the logs
+            List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
+            filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
+            Assert.All(filteredLogs, e => LogEventContainsServiceIdentifiers(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment));
+        }
+
+        [Fact]
         public void LogsInjectionEnabled_InsideSecondLevelSpan_AddsCorrelationIdentifiers()
         {
             // Assert that the Log4Net log provider is correctly being used
@@ -94,6 +94,38 @@ namespace Datadog.Trace.Tests.Logging
             List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
             filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
             Assert.All(filteredLogs, e => LogEventContainsCorrelationIdentifiers(e, childScope));
+        }
+
+        [Fact]
+        public void LogsInjectionEnabled_InsideSecondLevelSpan_AddsServiceIdentifiers()
+        {
+            // Assert that the Log4Net log provider is correctly being used
+            Assert.IsType<Log4NetLogProvider>(LogProvider.CurrentLogProvider);
+
+            // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
+            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
+            LoggingProviderTestHelpers.LogInChildSpan(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+
+            // Filter the logs
+            List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
+            filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
+            Assert.All(filteredLogs, e => LogEventContainsServiceIdentifiers(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment));
+        }
+
+        [Fact]
+        public void LogsInjectionEnabled_OutsideSpans_AddsServiceIdentifiers()
+        {
+            // Assert that the Log4Net log provider is correctly being used
+            Assert.IsType<Log4NetLogProvider>(LogProvider.CurrentLogProvider);
+
+            // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
+            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
+            LoggingProviderTestHelpers.LogOutsideSpans(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+
+            // Filter the logs
+            List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
+            filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
+            Assert.All(filteredLogs, e => LogEventContainsServiceIdentifiers(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment));
         }
 
         [Fact]
