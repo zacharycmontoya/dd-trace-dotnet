@@ -518,7 +518,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Could not successfully start the LibLogScopeEventSubscriber. There was an issue resolving the application logger.");
+                Log.Error(ex, "Could not successfully add dd.service, dd.version, dd.env to the global log context for the application logger.");
             }
         }
 
