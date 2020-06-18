@@ -539,6 +539,19 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     }
   }
 
+  if (module_metadata->assemblyName == "System.Web"_W &&
+      caller.type.name == "System.Web.Hosting.ApplicationManager"_W &&
+      caller.name == "PopulateDomainBindings"_W) {
+    Info("JITCompilationStarted: Found System.Web.Hosting.ApplicationManager.PopulateDomainBindings");
+    hr = ModifyAppDomainSetup(module_metadata->metadata_emit, module_metadata->assembly_emit, module_id, function_token);
+
+    if (FAILED(hr)) {
+      Warn("JITCompilationStarted: Call to ModifyAppDomainSetup() failed for ",
+           module_id, " ", function_token);
+      return S_OK;
+    }
+  }
+
   // we don't actually need to instrument anything in
   // Microsoft.AspNetCore.Hosting, it was included only to ensure the startup
   // hook is called for AspNetCore applications
@@ -1718,6 +1731,134 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
     return hr;
   }
 
+  return S_OK;
+}
+
+HRESULT CorProfiler::ModifyAppDomainSetup(
+    const ComPtr<IMetaDataEmit2>& metadata_emit,
+    const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
+    const ModuleID module_id,
+    const mdToken function_token) {
+  Info("Entering ModifyAppDomainSetup");
+
+  // Read the method IL
+  ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
+  auto hr = rewriter.Import();
+  if (FAILED(hr)) {
+    Warn("ModifyAppDomainSetup: Call to ILRewriter.Import() failed for ",
+         module_id, " ", function_token);
+    return hr;
+  }
+
+  // High-level: Get the token for instance void [mscorlib]System.AppDomainSetup::set_LoaderOptimization(valuetype [mscorlib]System.LoaderOptimization)
+  // 1) Create a reference to mscorlib
+  ComPtr<IUnknown> metadata_interfaces;
+  hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite,
+                                           IID_IMetaDataImport2,
+                                           metadata_interfaces.GetAddressOf());
+  if (FAILED(hr)) {
+    Warn("ModifyAppDomainSetup: failed to get metadata interface for ",
+         module_id);
+    return hr;
+  }
+
+  mdModuleRef mscorlib_ref;
+  hr = CreateAssemblyRefToMscorlib(assembly_emit, &mscorlib_ref);
+  if (FAILED(hr)) {
+    Warn(
+        "ModifyAppDomainSetup: failed to define AssemblyRef to "
+        "mscorlib");
+    return hr;
+  }
+
+  Info("ModifyAppDomainSetup: Created a reference to mscorlib");
+
+  // 2) Create a typeref to [mscorlib]System.AppDomainSetup
+  mdTypeRef system_appdomainsetup_type_ref;
+  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
+                                          "System.AppDomainSetup"_W.c_str(),
+                                          &system_appdomainsetup_type_ref);
+  if (FAILED(hr)) {
+    Warn("ModifyAppDomainSetup: DefineTypeRefByName failed");
+    return hr;
+  }
+
+  Info("ModifyAppDomainSetup: Created a typeref to [mscorlib]System.AppDomainSetup");
+
+  // 3) Create a typeref to [mscorlib]System.LoaderOptimization
+  mdTypeRef system_loaderoptimization_type_ref;
+  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
+                                          "System.LoaderOptimization"_W.c_str(),
+                                          &system_loaderoptimization_type_ref);
+  if (FAILED(hr)) {
+    Warn("ModifyAppDomainSetup: DefineTypeRefByName failed");
+    return hr;
+  }
+
+  Info("ModifyAppDomainSetup: Created a typeref to [mscorlib]System.LoaderOptimization");
+
+  // 3) Create the method signature for instance void set_LoaderOptimization(valuetype [mscorlib]System.LoaderOptimization)
+  // 3a) Create the start of the signature with fields we already know. What is left is the compressed token of [mscorlib]System.LoaderOptimization
+  COR_SIGNATURE set_loaderoptimization_signature_start[] = {
+      IMAGE_CEE_CS_CALLCONV_HASTHIS, // Calling convention
+      1,                             // Number of parameters
+      ELEMENT_TYPE_VOID,             // Return type
+      ELEMENT_TYPE_VALUETYPE         // List of parameter types
+      // insert compressed token for System.LoaderOptimization TypeRef here
+  };
+  ULONG start_length = sizeof(set_loaderoptimization_signature_start);
+
+  // 3b) Create the compressed token for [mscorlib]System.LoaderOptimization
+  BYTE system_loaderoptimization_type_ref_compressed_token[4];
+  ULONG token_length =
+      CorSigCompressToken(system_loaderoptimization_type_ref,
+                          system_loaderoptimization_type_ref_compressed_token);
+
+  // 3c) Create one array with the full signature that the metadata API's can consume
+  COR_SIGNATURE* set_loaderoptimization_signature =
+      new COR_SIGNATURE[start_length + token_length];
+  memcpy(set_loaderoptimization_signature,
+         set_loaderoptimization_signature_start,
+         start_length);
+  memcpy(&set_loaderoptimization_signature[start_length],
+         system_loaderoptimization_type_ref_compressed_token,
+         token_length);
+
+  // 4) Create the member ref for instance void set_LoaderOptimization(valuetype [mscorlib]System.LoaderOptimization)
+  mdMemberRef set_loaderoptimization_member_ref;
+  hr = metadata_emit->DefineMemberRef(
+      system_appdomainsetup_type_ref,
+      "set_LoaderOptimization"_W.c_str(),
+      set_loaderoptimization_signature,
+      start_length + token_length,
+      &set_loaderoptimization_member_ref);
+  delete[] set_loaderoptimization_signature;
+
+  Info("ModifyAppDomainSetup: Created a signature for instance void set_LoaderOptimization(valuetype [mscorlib]System.LoaderOptimization)");
+
+  // Get first instruction and set the rewriter to that location
+  ILRewriterWrapper rewriter_wrapper(&rewriter);
+  ILInstr* pInstr = rewriter.GetILList()->m_pNext;
+
+  // Get the [mscorlib]System.AppDomainSetup object at zero-based method argument 5
+  // Load the byte 1 onto the stack for the method argument to represent LoaderOptimization.SingleDomain
+  // callvirt instance void [mscorlib]System.AppDomainSetup::set_LoaderOptimization(valuetype [mscorlib]System.LoaderOptimization)
+  rewriter_wrapper.SetILPosition(pInstr);
+  rewriter_wrapper.LoadArgument(5);
+  Info("ModifyAppDomainSetup: Inserted ldarg.s 5");
+  rewriter_wrapper.LoadInt32(1);
+  Info("ModifyAppDomainSetup: Inserted ldc.i4.1");
+  rewriter_wrapper.CallMember(set_loaderoptimization_member_ref, true);
+  Info("ModifyAppDomainSetup: Inserted callvirt ", set_loaderoptimization_member_ref);
+  hr = rewriter.Export();
+
+  if (FAILED(hr)) {
+    Warn("ModifyAppDomainSetup: Call to ILRewriter.Export() failed for ",
+         module_id, " ", function_token);
+    return hr;
+  }
+
+  Info("ModifyAppDomainSetup: Success, returning...");
   return S_OK;
 }
 

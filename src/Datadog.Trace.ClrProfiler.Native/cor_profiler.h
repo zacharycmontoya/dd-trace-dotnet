@@ -64,11 +64,15 @@ class CorProfiler : public CorProfilerBase {
   //
   // Startup methods
   //
-  HRESULT RunILStartupHook(const ComPtr<IMetaDataEmit2>&,
-                             const ModuleID module_id,
-                             const mdToken function_token);
+  HRESULT RunILStartupHook(const ComPtr<IMetaDataEmit2>& metadata_emit,
+                            const ModuleID module_id,
+                            const mdToken function_token);
   HRESULT GenerateVoidILStartupMethod(const ModuleID module_id,
-                           mdMethodDef* ret_method_token);
+                            mdMethodDef* ret_method_token);
+  HRESULT ModifyAppDomainSetup(const ComPtr<IMetaDataEmit2>& metadata_emit,
+                            const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
+                            const ModuleID module_id,
+                            const mdToken function_token);
 
  public:
   CorProfiler() = default;
