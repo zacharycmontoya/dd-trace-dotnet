@@ -43,7 +43,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void SetTag_KeyValue_FloatValueSet()
+        public void SetTag_KeyValue_DoubleValueSet()
         {
             const string key = "Key";
             const double value = 123456789d;
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void SetTag_Key_Value_FloatValueOverflowSet()
+        public void SetTag_Key_Value_DoubleValueOverflowSet()
         {
             const string key = "Key";
             const double value = 9007199254740992;
