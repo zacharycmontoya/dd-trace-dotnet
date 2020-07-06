@@ -223,16 +223,7 @@ namespace Datadog.Trace
                 default:
                     if (value == null)
                     {
-                        if (Tags != null)
-                        {
-                            // lock when modifying the collection
-                            lock (_tagsLock)
-                            {
-                                // Agent doesn't accept null tag values,
-                                // remove them instead
-                                Tags.Remove(key);
-                            }
-                        }
+                        RemoveTag(key);
                     }
                     else
                     {
@@ -265,6 +256,34 @@ namespace Datadog.Trace
         /// <returns>This span to allow method chaining.</returns>
         ISpan ISpan.SetTag(string key, string value)
             => SetTag(key, value);
+
+        /// <summary>
+        /// Add the specified tag to this span.
+        /// </summary>
+        /// <param name="key">The tag's key.</param>
+        /// <param name="value">The tag's value.</param>
+        /// <returns>This span to allow method chaining.</returns>
+        public Span SetTag(string key, double value)
+        {
+            if (IsFinished)
+            {
+                Log.Debug("SetTag should not be called after the span was closed");
+                return this;
+            }
+
+            const long Pow2_53 = 9007199254740992;
+
+            if (value > -Pow2_53 && value < Pow2_53)
+            {
+                SetMetric(key, value);
+            }
+            else
+            {
+                SetTag(key, value.ToString("G17"));
+            }
+
+            return this;
+        }
 
         /// <summary>
         /// Record the end time of the span and flushes it to the backend.
@@ -323,7 +342,18 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="key">The tag's key</param>
         /// <returns> The value for the tag with the key specified, or null if the tag does not exist</returns>
+        // [Obsolete("This method is obsolte, use one of the following methods: GetStringTag / GetDoubleTag", false)]
         public string GetTag(string key)
+        {
+            return GetStringTag(key);
+        }
+
+        /// <summary>
+        /// Gets the value (or default/null if the key is not a valid tag) of a tag with the key value passed
+        /// </summary>
+        /// <param name="key">The tag's key</param>
+        /// <returns> The value for the tag with the key specified, or null if the tag does not exist</returns>
+        public string GetStringTag(string key)
         {
             switch (key)
             {
@@ -333,6 +363,16 @@ namespace Datadog.Trace
                     // no need to lock on single reads
                     return Tags != null && Tags.TryGetValue(key, out var value) ? value : null;
             }
+        }
+
+        /// <summary>
+        /// Gets the value (or default/null if the key is not a valid tag) of a tag with the key value passed
+        /// </summary>
+        /// <param name="key">The tag's key</param>
+        /// <returns> The value for the tag with the key specified, or null if the tag does not exist</returns>
+        public double? GetDoubleTag(string key)
+        {
+            return GetMetric(key);
         }
 
         internal void Finish(TimeSpan duration)
@@ -410,6 +450,32 @@ namespace Datadog.Trace
             }
 
             return this;
+        }
+
+        private void RemoveTag(string key)
+        {
+            // we don't know if the value we trying to remove was converted to string,
+            // so we have to check in both dictionaries to remove the key.
+
+            if (Metrics != null)
+            {
+                // lock when modifying the collection
+                lock (_metricLock)
+                {
+                    Metrics.Remove(key);
+                }
+            }
+
+            if (Tags != null)
+            {
+                // lock when modifying the collection
+                lock (_tagsLock)
+                {
+                    // Agent doesn't accept null tag values,
+                    // remove them instead
+                    Tags.Remove(key);
+                }
+            }
         }
     }
 }
