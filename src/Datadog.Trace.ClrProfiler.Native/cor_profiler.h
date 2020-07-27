@@ -13,6 +13,7 @@
 #include "integration.h"
 #include "module_metadata.h"
 #include "pal.h"
+#include "il_rewriter.h"
 
 namespace trace {
 
@@ -33,6 +34,9 @@ class CorProfiler : public CorProfilerBase {
   std::unordered_set<AppDomainID> first_jit_compilation_app_domains;
   bool in_azure_app_services = false;
   bool is_desktop_iis = false;
+
+  // Cor assembly properties
+  AssemblyProperty corAssemblyProperty{};
 
   //
   // Module helper variables
@@ -59,8 +63,16 @@ class CorProfiler : public CorProfilerBase {
                                          const mdToken function_token,
                                          const FunctionInfo& caller,
                                          const std::vector<MethodReplacement> method_replacements);
+  HRESULT ProcessCallTargetModification(ModuleMetadata* module_metadata, 
+                                         const FunctionID function_id,
+                                         const ModuleID module_id, 
+                                         const mdToken function_token,
+                                         const FunctionInfo& caller,
+                                         const std::vector<MethodReplacement> method_replacements);
   bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
 
+  HRESULT ModifyLocalSig(ModuleMetadata* module_metadata, ILRewriter& reWriter,
+                         mdTypeRef exTypeRef, mdTypeRef methodTraceTypeRef);
   //
   // Startup methods
   //
