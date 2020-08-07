@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Reflection;
+using System.Reflection.Emit;
 using Datadog.Trace.Util;
-using Sigil;
 
 namespace Datadog.Trace.ClrProfiler.Emit
 {
@@ -11,8 +11,20 @@ namespace Datadog.Trace.ClrProfiler.Emit
     /// </summary>
     internal static class ObjectExtensions
     {
+        internal static readonly ModuleBuilder Module;
+
         private static readonly ConcurrentDictionary<PropertyFetcherCacheKey, object> Cache = new ConcurrentDictionary<PropertyFetcherCacheKey, object>();
         private static readonly ConcurrentDictionary<PropertyFetcherCacheKey, PropertyFetcher> PropertyFetcherCache = new ConcurrentDictionary<PropertyFetcherCacheKey, PropertyFetcher>();
+
+        static ObjectExtensions()
+        {
+#if NETSTANDARD
+            var asm = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("Sigil.Emit.DynamicAssembly"), AssemblyBuilderAccess.Run);
+#else
+            var asm = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName("Sigil.Emit.DynamicAssembly"), AssemblyBuilderAccess.Run);
+#endif
+            Module = asm.DefineDynamicModule("DynamicModule");
+        }
 
         /// <summary>
         /// Tries to call an instance method with the specified name, a single parameter, and a return value.
@@ -239,43 +251,45 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 return null;
             }
 
-            var dynamicMethod = Emit<Func<object, TResult>>.NewDynamicMethod($"{containerType.FullName}.get_{propertyName}");
-            dynamicMethod.LoadArgument(0);
+            DynamicMethod dynamicMethod1 = new DynamicMethod($"{containerType.FullName}.get_{propertyName}", typeof(TResult), new Type[] { typeof(object) }, ObjectExtensions.Module, skipVisibility: true);
+            ILGenerator il = dynamicMethod1.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
 
             if (containerType.IsValueType)
             {
-                dynamicMethod.Unbox(containerType);
+                il.Emit(OpCodes.Unbox, containerType);
             }
             else
             {
-                dynamicMethod.CastClass(containerType);
+                il.Emit(OpCodes.Castclass, containerType);
             }
 
             MethodInfo methodInfo = propertyInfo.GetMethod;
 
             if (methodInfo.IsStatic)
             {
-                dynamicMethod.Call(methodInfo);
+                il.Emit(OpCodes.Call, methodInfo);
             }
             else
             {
                 // C# compiler always uses CALLVIRT for instance methods
                 // to get the cheap null check, even if they are not virtual
-                dynamicMethod.CallVirtual(methodInfo);
+                il.Emit(OpCodes.Callvirt, methodInfo);
             }
 
             if (propertyInfo.PropertyType != typeof(TResult))
             {
                 if (propertyInfo.PropertyType.IsValueType)
                 {
-                    dynamicMethod.Box(propertyInfo.PropertyType);
+                    il.Emit(OpCodes.Box, propertyInfo.PropertyType);
                 }
 
-                dynamicMethod.CastClass(typeof(TResult));
+                il.Emit(OpCodes.Castclass, typeof(TResult));
             }
 
-            dynamicMethod.Return();
-            return dynamicMethod.CreateDelegate();
+            il.Emit(OpCodes.Ret);
+            return (Func<object, TResult>)dynamicMethod1.CreateDelegate(typeof(Func<object, TResult>));
         }
 
         private static Func<object, TResult> CreateFieldDelegate<TResult>(Type containerType, string fieldName)
@@ -287,31 +301,33 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 return null;
             }
 
-            var dynamicMethod = Emit<Func<object, TResult>>.NewDynamicMethod($"{containerType.FullName}.{fieldName}");
-            dynamicMethod.LoadArgument(0);
+            DynamicMethod dynamicMethod1 = new DynamicMethod($"{containerType.FullName}.{fieldName}", typeof(TResult), new Type[] { typeof(object) }, ObjectExtensions.Module, skipVisibility: true);
+            ILGenerator il = dynamicMethod1.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
 
             if (containerType.IsValueType)
             {
-                dynamicMethod.UnboxAny(containerType);
+                il.Emit(OpCodes.Unbox, containerType);
             }
             else
             {
-                dynamicMethod.CastClass(containerType);
+                il.Emit(OpCodes.Castclass, containerType);
             }
 
-            dynamicMethod.LoadField(fieldInfo);
+            il.Emit(OpCodes.Ldfld, fieldInfo);
 
             if (fieldInfo.FieldType.IsValueType && typeof(TResult) == typeof(object))
             {
-                dynamicMethod.Box(fieldInfo.FieldType);
+                il.Emit(OpCodes.Box, fieldInfo.FieldType);
             }
             else if (fieldInfo.FieldType != typeof(TResult))
             {
-                dynamicMethod.CastClass(typeof(TResult));
+                il.Emit(OpCodes.Castclass, typeof(TResult));
             }
 
-            dynamicMethod.Return();
-            return dynamicMethod.CreateDelegate();
+            il.Emit(OpCodes.Ret);
+            return (Func<object, TResult>)dynamicMethod1.CreateDelegate(typeof(Func<object, TResult>));
         }
 
         private readonly struct PropertyFetcherCacheKey : IEquatable<PropertyFetcherCacheKey>
