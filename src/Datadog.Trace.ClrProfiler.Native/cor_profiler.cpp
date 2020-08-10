@@ -1300,7 +1300,7 @@ HRESULT CorProfiler::ProcessCallTargetModification(
                 {
                     try
                     {
-                        state = CallTargetInvoker.BeginMethod(...); 
+                        state = CallTargetInvoker.BeginMethod([instanceRuntimeHandle], this, [method_parameters_array], [wrapperRuntimeHandle]); 
                         if (!state.ShouldExecuteMethod())
                         {
                             return;
@@ -1330,7 +1330,7 @@ HRESULT CorProfiler::ProcessCallTargetModification(
                 {
                     try
                     {
-                        returnValue = CallTargetInvoker.EndMethod(...);
+                        returnValue = CallTargetInvoker.EndMethod(returnValue, exception, state, [wrapperRuntimeHandle]);
                     }
                     catch (Exception ex)
                     {
