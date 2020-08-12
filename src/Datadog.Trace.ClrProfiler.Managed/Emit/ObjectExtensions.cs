@@ -15,8 +15,8 @@ namespace Datadog.Trace.ClrProfiler.Emit
         // and have same evidence/permissions as this AppDomain
         internal static readonly ModuleBuilder Module;
 
-        private static readonly ConcurrentDictionary<PropertyFetcherCacheKey, object> Cache = new ConcurrentDictionary<PropertyFetcherCacheKey, object>();
-        private static readonly ConcurrentDictionary<PropertyFetcherCacheKey, PropertyFetcher> PropertyFetcherCache = new ConcurrentDictionary<PropertyFetcherCacheKey, PropertyFetcher>();
+        private static readonly ConcurrentDictionary<MemberFetcherCacheKey, object> Cache = new ConcurrentDictionary<MemberFetcherCacheKey, object>();
+        private static readonly ConcurrentDictionary<MemberFetcherCacheKey, PropertyFetcher> PropertyFetcherCache = new ConcurrentDictionary<MemberFetcherCacheKey, PropertyFetcher>();
 
         static ObjectExtensions()
         {
@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             var paramType1 = typeof(TArg1);
 
             object cachedItem = Cache.GetOrAdd(
-                new PropertyFetcherCacheKey(type, paramType1, methodName),
+                new MemberFetcherCacheKey(MemberType.Method, type, paramType1, methodName),
                 key =>
                     DynamicMethodBuilder<Func<object, TArg1, TResult>>
                        .CreateMethodCallDelegate(
@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             var paramType2 = typeof(TArg2);
 
             object cachedItem = Cache.GetOrAdd(
-                new PropertyFetcherCacheKey(type, paramType1, paramType2, methodName),
+                new MemberFetcherCacheKey(MemberType.Method, type, paramType1, paramType2, methodName),
                 key =>
                     DynamicMethodBuilder<Action<object, TArg1, TArg2>>
                        .CreateMethodCallDelegate(
@@ -111,7 +111,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             var type = source.GetType();
 
             object cachedItem = Cache.GetOrAdd(
-                new PropertyFetcherCacheKey(type, null, methodName),
+                new MemberFetcherCacheKey(MemberType.Method, type, null, methodName),
                 key =>
                     DynamicMethodBuilder<Func<object, TResult>>
                        .CreateMethodCallDelegate(
@@ -170,7 +170,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 var type = source.GetType();
 
                 PropertyFetcher fetcher = PropertyFetcherCache.GetOrAdd(
-                    GetKey<TResult>(propertyName, type),
+                    GetKey<TResult>(MemberType.Property, propertyName, type),
                     key => new PropertyFetcher(key.Name));
 
                 if (fetcher != null)
@@ -214,7 +214,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             var type = source.GetType();
 
             object cachedItem = Cache.GetOrAdd(
-                GetKey<TResult>(fieldName, type),
+                GetKey<TResult>(MemberType.Field, fieldName, type),
                 key => CreateFieldDelegate<TResult>(key.Type1, key.Name));
 
             if (cachedItem is Func<object, TResult> func)
@@ -239,59 +239,9 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return GetField<object>(source, fieldName);
         }
 
-        private static PropertyFetcherCacheKey GetKey<TResult>(string name, Type type)
+        private static MemberFetcherCacheKey GetKey<TResult>(MemberType memberType, string name, Type type)
         {
-            return new PropertyFetcherCacheKey(type, typeof(TResult), name);
-        }
-
-        private static Func<object, TResult> CreatePropertyDelegate<TResult>(Type containerType, string propertyName)
-        {
-            PropertyInfo propertyInfo = containerType.GetProperty(propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-
-            if (propertyInfo == null)
-            {
-                return null;
-            }
-
-            DynamicMethod dynamicMethod = new DynamicMethod($"{containerType.FullName}.get_{propertyName}", typeof(TResult), new Type[] { typeof(object) }, ObjectExtensions.Module, skipVisibility: true);
-            ILGenerator il = dynamicMethod.GetILGenerator();
-
-            il.Emit(OpCodes.Ldarg_0);
-
-            if (containerType.IsValueType)
-            {
-                il.Emit(OpCodes.Unbox, containerType);
-            }
-            else
-            {
-                il.Emit(OpCodes.Castclass, containerType);
-            }
-
-            MethodInfo methodInfo = propertyInfo.GetMethod;
-
-            if (methodInfo.IsStatic)
-            {
-                il.Emit(OpCodes.Call, methodInfo);
-            }
-            else
-            {
-                // C# compiler always uses CALLVIRT for instance methods
-                // to get the cheap null check, even if they are not virtual
-                il.Emit(OpCodes.Callvirt, methodInfo);
-            }
-
-            if (propertyInfo.PropertyType != typeof(TResult))
-            {
-                if (propertyInfo.PropertyType.IsValueType)
-                {
-                    il.Emit(OpCodes.Box, propertyInfo.PropertyType);
-                }
-
-                il.Emit(OpCodes.Castclass, typeof(TResult));
-            }
-
-            il.Emit(OpCodes.Ret);
-            return (Func<object, TResult>)dynamicMethod.CreateDelegate(typeof(Func<object, TResult>));
+            return new MemberFetcherCacheKey(memberType, type, typeof(TResult), name);
         }
 
         private static Func<object, TResult> CreateFieldDelegate<TResult>(Type containerType, string fieldName)
@@ -332,34 +282,36 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return (Func<object, TResult>)dynamicMethod1.CreateDelegate(typeof(Func<object, TResult>));
         }
 
-        private readonly struct PropertyFetcherCacheKey : IEquatable<PropertyFetcherCacheKey>
+        private readonly struct MemberFetcherCacheKey : IEquatable<MemberFetcherCacheKey>
         {
+            public readonly MemberType MemberType;
             public readonly Type Type1;
             public readonly Type Type2;
             public readonly Type Type3;
             public readonly string Name;
 
-            public PropertyFetcherCacheKey(Type type1, Type type2, string name)
-                : this(type1, type2, null, name)
+            public MemberFetcherCacheKey(MemberType memberType, Type type1, Type type2, string name)
+                : this(memberType, type1, type2, null, name)
             {
             }
 
-            public PropertyFetcherCacheKey(Type type1, Type type2, Type type3, string name)
+            public MemberFetcherCacheKey(MemberType memberType, Type type1, Type type2, Type type3, string name)
             {
+                MemberType = memberType;
                 Type1 = type1 ?? throw new ArgumentNullException(nameof(type1));
                 Type2 = type2;
                 Type3 = type3;
                 Name = name ?? throw new ArgumentNullException(nameof(name));
             }
 
-            public bool Equals(PropertyFetcherCacheKey other)
+            public bool Equals(MemberFetcherCacheKey other)
             {
                 return Equals(Type1, other.Type1) && Equals(Type2, other.Type2) && Equals(Type3, other.Type3) && Name == other.Name;
             }
 
             public override bool Equals(object obj)
             {
-                return obj is PropertyFetcherCacheKey other && Equals(other);
+                return obj is MemberFetcherCacheKey other && Equals(other);
             }
 
             public override int GetHashCode()
@@ -373,6 +325,15 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     return hashCode;
                 }
             }
+        }
+
+#pragma warning disable SA1201 // Elements must appear in the correct order
+        private enum MemberType
+#pragma warning restore SA1201 // Elements must appear in the correct order
+        {
+            Field,
+            Property,
+            Method
         }
     }
 }
