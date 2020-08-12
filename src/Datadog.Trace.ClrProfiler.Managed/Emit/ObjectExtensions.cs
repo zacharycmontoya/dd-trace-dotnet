@@ -251,8 +251,8 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 return null;
             }
 
-            DynamicMethod dynamicMethod1 = new DynamicMethod($"{containerType.FullName}.get_{propertyName}", typeof(TResult), new Type[] { typeof(object) }, ObjectExtensions.Module, skipVisibility: true);
-            ILGenerator il = dynamicMethod1.GetILGenerator();
+            DynamicMethod dynamicMethod = new DynamicMethod($"{containerType.FullName}.get_{propertyName}", typeof(TResult), new Type[] { typeof(object) }, ObjectExtensions.Module, skipVisibility: true);
+            ILGenerator il = dynamicMethod.GetILGenerator();
 
             il.Emit(OpCodes.Ldarg_0);
 
@@ -289,7 +289,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             }
 
             il.Emit(OpCodes.Ret);
-            return (Func<object, TResult>)dynamicMethod1.CreateDelegate(typeof(Func<object, TResult>));
+            return (Func<object, TResult>)dynamicMethod.CreateDelegate(typeof(Func<object, TResult>));
         }
 
         private static Func<object, TResult> CreateFieldDelegate<TResult>(Type containerType, string fieldName)
