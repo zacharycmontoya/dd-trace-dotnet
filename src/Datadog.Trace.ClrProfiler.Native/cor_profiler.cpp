@@ -1261,10 +1261,15 @@ HRESULT CorProfiler::ProcessCallTargetModification(
     if (method_replacement.target_method.assembly.name == module_metadata->assemblyName &&
         method_replacement.target_method.type_name == caller.type.name &&
         method_replacement.target_method.method_name == caller.name) {
-    
+      
+        auto metaEmit = module_metadata->metadata_emit;
+        auto metaImport = module_metadata->metadata_import;
+
+        auto retFuncArg = caller.method_signature.GetRet();
+
         // return ref is not supported
         unsigned elementType;
-        auto retTypeFlags = caller.method_signature.GetRet().GetTypeFlags(elementType);
+        auto retTypeFlags = retFuncArg.GetTypeFlags(elementType);
         if (retTypeFlags & TypeFlagByRef) {
           Warn("[UNSUPPORTED] Module: ", module_metadata->assemblyName,
                " Type: ", caller.type.name,
@@ -1272,8 +1277,29 @@ HRESULT CorProfiler::ProcessCallTargetModification(
           return S_OK;
         }
 
-        auto isStatic = !(caller.method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
+        bool isVoidMethod = (retTypeFlags & TypeFlagVoid) > 0;
+        bool isStatic = !(caller.method_signature.CallingConvention() &
+                          IMAGE_CEE_CS_CALLCONV_HASTHIS);
         
+        // Gets if the return type of the original method is valueType
+        bool retIsValueType = false;
+        mdToken retTypeTok;
+        if (!isVoidMethod) {
+          if (debug_logging_enabled) {
+            Debug("Return token name: ",
+                  retFuncArg.GetTypeTokName(metaImport));
+          }
+
+          retTypeTok = retFuncArg.GetTypeTok(metaEmit, module_metadata->corLibAssemblyRef);
+          if (retFuncArg.GetTypeFlags(elementType) & TypeFlagBoxedType)
+            retIsValueType = true;
+        }
+
+        if (debug_logging_enabled) {
+          Debug("Return type is value type: ", retIsValueType ? "YES" : "NO");
+          Debug("Return token: ", retTypeTok);
+        }
+
         // *** Ensure all CallTarget refs
         EnsureCallTargetRefs(module_metadata);
 
@@ -1284,6 +1310,7 @@ HRESULT CorProfiler::ProcessCallTargetModification(
 
         // Modify locals signature to add returnvalue, exception, and the object with the delegate to call after the method finishes.
         hr = ModifyLocalSig(module_metadata, rewriter,
+                            retIsValueType ? NULL : &retFuncArg,
                             module_metadata->exTypeRef,
                             module_metadata->callTargetStateTypeRef);
         if (FAILED(hr)) {
@@ -1350,8 +1377,6 @@ HRESULT CorProfiler::ProcessCallTargetModification(
         */
 
         // metadata helpers
-        auto pEmit = module_metadata->metadata_emit;
-        auto pImport = module_metadata->metadata_import;
         auto pReWriter = &rewriter;
 
         // new local indexes
@@ -1404,8 +1429,7 @@ HRESULT CorProfiler::ProcessCallTargetModification(
               reWriterWrapper.LoadIND(elementType);
             }
             if (argTypeFlags & TypeFlagBoxedType) {
-              auto tok = arguments[i].GetTypeTok(
-                  pEmit, module_metadata->corLibAssemblyRef);
+              auto tok = arguments[i].GetTypeTok(metaEmit, module_metadata->corLibAssemblyRef);
               if (tok == mdTokenNil) {
                 return S_OK;
               }
@@ -1451,27 +1475,6 @@ HRESULT CorProfiler::ProcessCallTargetModification(
         pStateLeaveToBeginOriginalMethod->m_pTarget = beginOriginalMethod;
         beginMethodCatchLeave->m_pTarget = beginOriginalMethod;
 
-
-        // Gets if the return type of the original method is boxed
-        bool isVoidMethod = (retTypeFlags & TypeFlagVoid) > 0;
-        auto ret = caller.method_signature.GetRet();
-
-        bool retIsBoxedType = false;
-        mdToken retTypeTok;
-        if (!isVoidMethod) {
-          if (debug_logging_enabled) {
-            Debug("Return token name: ", ret.GetTypeTokName(pImport));
-          }
-
-          retTypeTok =
-              ret.GetTypeTok(pEmit, module_metadata->corLibAssemblyRef);
-          if (ret.GetTypeFlags(elementType) & TypeFlagBoxedType)
-            retIsBoxedType = true;
-        }
-        if (debug_logging_enabled) {
-          Debug("Return type is boxed: ", retIsBoxedType ? "YES" : "NO");
-          Debug("Return token: ", retTypeTok);
-        }
         
         //
         // ENDING OF THE METHOD EXECUTION
@@ -1548,11 +1551,11 @@ HRESULT CorProfiler::ProcessCallTargetModification(
         // Prepare to return the value
         if (!isVoidMethod) {
           reWriterWrapper.LoadLocal(indexRet);
-          if (retIsBoxedType) {
+          if (retIsValueType) {
             reWriterWrapper.UnboxAny(retTypeTok);
           } else {
-              //TODO: This is causing BadImageException when the returning type is generic
-            //reWriterWrapper.Cast(retTypeTok);
+          //    //TODO: This is causing BadImageException when the returning type is generic
+          //  //reWriterWrapper.Cast(retTypeTok);
           }
         }
 
@@ -1568,7 +1571,7 @@ HRESULT CorProfiler::ProcessCallTargetModification(
               if (pInstr != pRetInstr) {
                 if (!isVoidMethod) {
                   reWriterWrapper.SetILPosition(pInstr);
-                  if (retIsBoxedType) {
+                  if (retIsValueType) {
                     reWriterWrapper.Box(retTypeTok);
                   }
                   reWriterWrapper.StLocal(indexRet);
@@ -1712,7 +1715,9 @@ bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_i
 
 // Modify the local signature of a method to add ret ex methodTrace var to locals
 HRESULT CorProfiler::ModifyLocalSig(ModuleMetadata* module_metadata,
-                                    ILRewriter& reWriter, mdTypeRef exTypeRef,
+                                    ILRewriter& reWriter, 
+                                    FunctionMethodArgument* methodReturnValue, 
+                                    mdTypeRef exTypeRef,
                                     mdTypeRef callTargetStateTypeRef) {
   HRESULT hr;
   PCCOR_SIGNATURE originalSignature = NULL;
@@ -1732,17 +1737,31 @@ HRESULT CorProfiler::ModifyLocalSig(ModuleMetadata* module_metadata,
     }
   }
 
+  PCCOR_SIGNATURE returnSignatureType = NULL; 
+  ULONG returnSignatureTypeSize;
+  if (methodReturnValue != NULL) {
+    returnSignatureTypeSize =
+        methodReturnValue->GetSignature(returnSignatureType);
+  }
+
   unsigned exTypeRefBuffer;
   auto exTypeRefSize = CorSigCompressToken(exTypeRef, &exTypeRefBuffer);
 
   unsigned callTargetStateTypeRefBuffer;
   auto callTargetStateTypeRefSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateTypeRefBuffer);
 
-  ULONG newSignatureSize = originalSignatureSize + 1 + 1 + callTargetStateTypeRefSize + 1 + exTypeRefSize;
+  ULONG newSignatureSize = originalSignatureSize + returnSignatureTypeSize + 1 + callTargetStateTypeRefSize + 1 + exTypeRefSize;
   ULONG cOrigLocals;
   ULONG cbOrigLocals = 0;
   unsigned cNewLocalsBuffer;
   ULONG cNewLocalsLen;
+
+  // Handling value type return type
+  bool isValueTypeReturnType = false;
+  if (returnSignatureTypeSize == 0) {
+    newSignatureSize++;
+    isValueTypeReturnType = true;
+  }
 
   // Calculate the new locals count
   if (originalSignatureSize == 0) {
@@ -1775,7 +1794,13 @@ HRESULT CorProfiler::ModifyLocalSig(ModuleMetadata* module_metadata,
   // Add new locals
 
   // return value
-  rgbNewSig[rgbNewSigOffset++] = ELEMENT_TYPE_OBJECT;
+  if (isValueTypeReturnType) {
+    rgbNewSig[rgbNewSigOffset++] = ELEMENT_TYPE_OBJECT;
+  } else {
+    memcpy(rgbNewSig + rgbNewSigOffset, returnSignatureType,
+           returnSignatureTypeSize);
+    rgbNewSigOffset += returnSignatureTypeSize;
+  }
 
   // exception value
   rgbNewSig[rgbNewSigOffset++] = ELEMENT_TYPE_CLASS;
@@ -1788,7 +1813,7 @@ HRESULT CorProfiler::ModifyLocalSig(ModuleMetadata* module_metadata,
   rgbNewSigOffset += callTargetStateTypeRefSize;
 
   return module_metadata->metadata_emit->GetTokenFromSig(
-      &rgbNewSig[0], newSignatureSize, &reWriter.m_tkLocalVarSig);
+      rgbNewSig, newSignatureSize, &reWriter.m_tkLocalVarSig);
 }
 
 std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
