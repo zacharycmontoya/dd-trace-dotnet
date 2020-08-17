@@ -50,7 +50,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
                        .CreateMethodCallDelegate(
                             key.Type1,
                             key.Name,
-                            OpCodeValue.Callvirt,
                             methodParameterTypes: new[] { key.Type2 }));
 
             if (cachedItem is Func<object, TArg1, TResult> func)
@@ -86,7 +85,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
                        .CreateMethodCallDelegate(
                             key.Type1,
                             key.Name,
-                            OpCodeValue.Callvirt,
                             methodParameterTypes: new[] { key.Type2, key.Type3 }));
 
             if (cachedItem is Action<object, TArg1, TArg2> func)
@@ -116,8 +114,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     DynamicMethodBuilder<Func<object, TResult>>
                        .CreateMethodCallDelegate(
                             key.Type1,
-                            key.Name,
-                            OpCodeValue.Callvirt));
+                            key.Name));
 
             if (cachedItem is Func<object, TResult> func)
             {
