@@ -105,7 +105,7 @@ namespace Datadog.Trace
                     IApi overridingApiClient = new Api(baseEndpoint, apiRequestFactory: null, Statsd);
                     if (_agentWriter == null)
                     {
-                        _agentWriter = _agentWriter ?? new AgentWriter(overridingApiClient, Statsd);
+                        _agentWriter = _agentWriter ?? CreateWriter(overridingApiClient, Statsd);
                     }
                     else
                     {
@@ -114,7 +114,7 @@ namespace Datadog.Trace
                 });
 
             // fall back to default implementations of each dependency if not provided
-            _agentWriter = agentWriter ?? new AgentWriter(new Api(Settings.AgentUri, apiRequestFactory: null, Statsd), Statsd);
+            _agentWriter = agentWriter ?? CreateWriter(new Api(Settings.AgentUri, apiRequestFactory: null, Statsd), Statsd);
 
             _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
             Sampler = sampler ?? new RuleBasedSampler(new RateLimiter(Settings.MaxTracesSubmittedPerSecond));
@@ -548,6 +548,18 @@ namespace Datadog.Trace
             {
                 Log.Warning(ex, "DATADOG TRACER DIAGNOSTICS - Error fetching configuration");
             }
+        }
+
+        private static IAgentWriter CreateWriter(IApi api, IStatsd stats)
+        {
+            if (Environment.GetEnvironmentVariable("DD_EAGER_WRITER") == "1")
+            {
+                Log.Warning("Using eager writer");
+                return new EagerAgentWriter(api, stats);
+            }
+
+            Log.Warning("Using background writer");
+            return new AgentWriter(api, stats);
         }
 
         /// <summary>

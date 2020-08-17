@@ -88,6 +88,11 @@ namespace Benchmarks.Trace
 
                 return new FakeApiResponse();
             }
+
+            public async Task<IApiResponse> PostAsync(Action<Stream> writer)
+            {
+                throw new NotImplementedException();
+            }
         }
 
         private class FakeApiResponse : IApiResponse
