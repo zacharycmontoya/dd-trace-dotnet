@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             var paramType1 = typeof(TArg1);
 
             object cachedItem = Cache.GetOrAdd(
-                new MemberFetcherCacheKey(MemberType.Method, type, paramType1, methodName),
+                new MemberFetcherCacheKey(type, paramType1, methodName),
                 key =>
                     DynamicMethodBuilder<Func<object, TArg1, TResult>>
                        .CreateMethodCallDelegate(
@@ -79,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             var paramType2 = typeof(TArg2);
 
             object cachedItem = Cache.GetOrAdd(
-                new MemberFetcherCacheKey(MemberType.Method, type, paramType1, paramType2, methodName),
+                new MemberFetcherCacheKey(type, paramType1, paramType2, methodName),
                 key =>
                     DynamicMethodBuilder<Action<object, TArg1, TArg2>>
                        .CreateMethodCallDelegate(
@@ -109,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             var type = source.GetType();
 
             object cachedItem = Cache.GetOrAdd(
-                new MemberFetcherCacheKey(MemberType.Method, type, null, methodName),
+                new MemberFetcherCacheKey(type, null, methodName),
                 key =>
                     DynamicMethodBuilder<Func<object, TResult>>
                        .CreateMethodCallDelegate(
@@ -167,7 +167,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 var type = source.GetType();
 
                 IMemberFetcher fetcher = MemberFetcherCache.GetOrAdd(
-                    GetKey<TResult>(MemberType.Property, propertyName, type),
+                    GetKey<TResult>(propertyName, type),
                     key => new PropertyFetcher(key.Name));
 
                 if (fetcher != null)
@@ -213,7 +213,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 var type = source.GetType();
 
                 IMemberFetcher fetcher = MemberFetcherCache.GetOrAdd(
-                    GetKey<TResult>(MemberType.Field, fieldName, type),
+                    GetKey<TResult>(fieldName, type),
                     key => new FieldFetcher(key.Name));
 
                 if (fetcher != null)
@@ -239,27 +239,25 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return GetField<object>(source, fieldName);
         }
 
-        private static MemberFetcherCacheKey GetKey<TResult>(MemberType memberType, string name, Type type)
+        private static MemberFetcherCacheKey GetKey<TResult>(string name, Type type)
         {
-            return new MemberFetcherCacheKey(memberType, type, typeof(TResult), name);
+            return new MemberFetcherCacheKey(type, typeof(TResult), name);
         }
 
         private readonly struct MemberFetcherCacheKey : IEquatable<MemberFetcherCacheKey>
         {
-            public readonly MemberType MemberType;
             public readonly Type Type1;
             public readonly Type Type2;
             public readonly Type Type3;
             public readonly string Name;
 
-            public MemberFetcherCacheKey(MemberType memberType, Type type1, Type type2, string name)
-                : this(memberType, type1, type2, null, name)
+            public MemberFetcherCacheKey(Type type1, Type type2, string name)
+                : this(type1, type2, null, name)
             {
             }
 
-            public MemberFetcherCacheKey(MemberType memberType, Type type1, Type type2, Type type3, string name)
+            public MemberFetcherCacheKey(Type type1, Type type2, Type type3, string name)
             {
-                MemberType = memberType;
                 Type1 = type1 ?? throw new ArgumentNullException(nameof(type1));
                 Type2 = type2;
                 Type3 = type3;
