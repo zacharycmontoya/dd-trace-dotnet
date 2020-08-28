@@ -7,6 +7,7 @@
 
   <!-- Needless change -->
   <!-- Another needless change -->
+  <!-- Change not on master -->
   <ItemGroup>
     <CsharpProject Include="src\**\*.csproj"/>
     <CsharpTestProject Include="test\**\*.csproj"/>
